@@ -1,0 +1,452 @@
+﻿/* =====================================================
+   ABOUT US PAGE STYLES
+   ===================================================== */
+
+:root {
+    --primary-color: #0ddb00;
+    --primary-dark: #f08438;
+    --secondary-color: #0a0a0b;
+    --text-color: #687279;
+    --text-dark: #0a0a0b;
+    --bg-light: #f9f9f9;
+    --border-color: #e0e0e0;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ==========================================
+   HERO SECTION
+   ========================================== */
+
+.about-hero {
+    position: relative;
+    height: 600px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0a0a0b 0%, #2c2c2c 100%);
+}
+
+.hero-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+    .hero-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.4;
+    }
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    color: white;
+    max-width: 800px;
+    padding: 0 2rem;
+}
+
+    .hero-content h1 {
+        font-size: 72px;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        letter-spacing: -2px;
+    }
+
+.hero-subtitle {
+    font-size: 24px;
+    font-weight: 300;
+    opacity: 0.9;
+}
+
+/* ==========================================
+   COMMON SECTIONS
+   ========================================== */
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+section {
+    padding: 5rem 0;
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--primary-dark);
+    margin-bottom: 1rem;
+}
+
+.section-header h2 {
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--text-dark);
+    line-height: 1.2;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* ==========================================
+   MISSION SECTION
+   ========================================== */
+
+.mission-section {
+    background: white;
+}
+
+.mission-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+}
+
+.mission-text p {
+    font-size: 18px;
+    line-height: 1.8;
+    color: var(--text-color);
+    margin-bottom: 1.5rem;
+}
+
+.mission-image {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+    .mission-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s;
+    }
+
+    .mission-image:hover img {
+        transform: scale(1.05);
+    }
+
+/* ==========================================
+   VALUES SECTION
+   ========================================== */
+
+.values-section {
+    background: var(--bg-light);
+}
+
+.values-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+}
+
+.value-card {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 12px;
+    text-align: center;
+    transition: all 0.3s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+    .value-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+    }
+
+.value-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+    background: linear-gradient(135deg, var(--primary-dark), #ff9f5e);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: white;
+}
+
+.value-card h3 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-dark);
+}
+
+.value-card p {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-color);
+}
+
+/* ==========================================
+   TIMELINE SECTION
+   ========================================== */
+
+.timeline-section {
+    background: white;
+}
+
+.timeline {
+    max-width: 800px;
+    margin: 0 auto;
+    position: relative;
+}
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 80px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--border-color);
+    }
+
+.timeline-item {
+    display: flex;
+    gap: 3rem;
+    margin-bottom: 3rem;
+    position: relative;
+}
+
+.timeline-date {
+    min-width: 80px;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    text-align: right;
+}
+
+.timeline-item::after {
+    content: '';
+    position: absolute;
+    left: 72px;
+    top: 8px;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border: 4px solid var(--primary-dark);
+    border-radius: 50%;
+    z-index: 2;
+}
+
+.timeline-content {
+    flex: 1;
+    background: var(--bg-light);
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+}
+
+    .timeline-content h3 {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        color: var(--text-dark);
+    }
+
+    .timeline-content p {
+        font-size: 15px;
+        line-height: 1.6;
+        color: var(--text-color);
+    }
+
+/* ==========================================
+   IMPACT SECTION
+   ========================================== */
+
+.impact-section {
+    background: var(--text-dark);
+    color: white;
+}
+
+    .impact-section .section-header h2,
+    .impact-section .label {
+        color: white;
+    }
+
+.impact-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3rem;
+}
+
+.stat-card {
+    text-align: center;
+    padding: 2rem;
+}
+
+.stat-number {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+
+/* ==========================================
+   CTA SECTION
+   ========================================== */
+
+.cta-section {
+    background: linear-gradient(135deg, var(--primary-dark), #ff9f5e);
+    color: white;
+}
+
+.cta-content {
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+    .cta-content h2 {
+        font-size: 42px;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+
+    .cta-content p {
+        font-size: 18px;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+    }
+
+.cta-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.btn-primary,
+.btn-secondary {
+    padding: 1rem 2.5rem;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: white;
+    color: var(--primary-dark);
+}
+
+    .btn-primary:hover {
+        background: var(--text-dark);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+.btn-secondary {
+    background: transparent;
+    color: white;
+    border: 2px solid white;
+}
+
+    .btn-secondary:hover {
+        background: white;
+        color: var(--primary-dark);
+        transform: translateY(-2px);
+    }
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+
+@media (max-width: 1024px) {
+    .hero-content h1 {
+        font-size: 56px;
+    }
+
+    .section-header h2 {
+        font-size: 36px;
+    }
+
+    .values-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .impact-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-content h1 {
+        font-size: 42px;
+    }
+
+    .hero-subtitle {
+        font-size: 18px;
+    }
+
+    .mission-content {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .values-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .timeline::before {
+        left: 60px;
+    }
+
+    .timeline-item::after {
+        left: 52px;
+    }
+
+    .timeline-date {
+        min-width: 60px;
+        font-size: 18px;
+    }
+
+    .impact-stats {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .team-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .cta-buttons {
+        flex-direction: column;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        width: 100%;
+    }
+}

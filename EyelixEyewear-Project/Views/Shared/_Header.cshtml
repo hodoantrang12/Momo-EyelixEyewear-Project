@@ -1,0 +1,111 @@
+﻿@* Views/Shared/_Header.cshtml *@
+
+<div id="header">
+
+    <!-- Main Navigation -->
+    <nav class="main-nav">
+        <div class="nav-wrapper">
+
+            <!-- Left Menu -->
+            <ul class="nav-left">
+                <li class="dropdown">
+                    <a asp-controller="Product" asp-action="Index">PRODUCTS</a>
+                    <ul class="submenu">
+                        <li><a asp-controller="Product" asp-action="Index" asp-route-category="glasses">GLASSES</a></li>
+                        <li><a asp-controller="Product" asp-action="Index" asp-route-category="sunglasses">SUNGLASSES</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a>COLLECTIONS</a>
+                    <ul class="submenu">
+                        <li><a asp-controller="Home" asp-action="Collection" asp-route-slug="Recycled-Aluminium">RECYCLED ALUMINIUM</a></li>
+                        <li><a asp-controller="Home" asp-action="Collection" asp-route-slug="Fall-Winter-2025">FALL/WINTER 2025</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a asp-controller="Home" asp-action="About">ABOUT US</a>
+                </li>
+            </ul>
+
+            <!-- Logo Center -->
+            <div class="logo">
+                <a asp-controller="Home" asp-action="Index">
+                    <img src="~/images/logo/eyelix-logo.png" alt="Eyelix Eyewear">
+                </a>
+            </div>
+
+            <!-- Right Icons -->
+            <div class="nav-right">
+                <button class="icon-btn search-btn" aria-label="Search" onclick="openSearchModal()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                    </svg>
+                </button>
+
+                <!-- Account Icon -->
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <a asp-controller="Account" asp-action="Profile" class="icon-btn account-btn" aria-label="Account">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                    </a>
+                }
+                else
+                {
+                    <a asp-controller="Account" asp-action="Login" class="icon-btn account-btn" aria-label="Login">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                    </a>
+                }
+
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <a asp-controller="Order" asp-action="Cart" class="icon-btn cart-btn" aria-label="Cart">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="9" cy="21" r="1" />
+                            <circle cx="20" cy="21" r="1" />
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                        </svg>
+                        <span class="cart-count">0</span>
+                    </a>
+                }
+                else
+                {
+                    <a asp-controller="Account" asp-action="Login" class="icon-btn cart-btn" aria-label="Cart">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="9" cy="21" r="1" />
+                            <circle cx="20" cy="21" r="1" />
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                        </svg>
+                    </a>
+                }
+            </div>
+        </div>
+    </nav>
+
+    <!-- Search Modal -->
+    <div id="searchModal" class="search-modal">
+        <div class="search-modal-content">
+            <button class="search-close" onclick="closeSearchModal()">&times;</button>
+
+            <div class="search-box">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                </svg>
+                <input type="text"
+                       id="searchInput"
+                       class="search-input"
+                       placeholder="Search for products..."
+                       autocomplete="off">
+            </div>
+
+            <div id="searchResults" class="search-results"></div>
+        </div>
+    </div>
+</div>

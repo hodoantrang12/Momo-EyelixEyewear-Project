@@ -1,0 +1,243 @@
+﻿@model EyelixEyewear_Project.Models.ViewModels.CheckoutViewModel
+@{
+    ViewBag.Title = "Checkout - Eyelix";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section styles {
+    <link rel="stylesheet" href="~/css/checkout.css">
+}
+
+<div class="checkout-title-wrapper">
+    <h1 class="checkout-title">Checkout</h1>
+</div>
+<!-- CHECKOUT CONTENT -->
+<main class="checkout-page">
+    <div class="checkout-layout">
+
+        <!-- LEFT SIDE: Billing Details -->
+        <section class="checkout-left">
+            <h2>Billing details</h2>
+
+            @using (Html.BeginForm("PlaceOrder", "Order", FormMethod.Post, new { id = "checkout-form" }))
+            {
+                @Html.AntiForgeryToken()
+
+                @* Hiển thị TẤT CẢ lỗi validation *@
+                @Html.ValidationSummary(false, "", new { @class = "alert alert-danger", style = "margin-bottom: 20px; padding: 15px; border-radius: 8px;" })
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.FullName)
+                    <span class="required">*</span>
+                    @Html.TextBoxFor(m => m.FullName, new {
+                    @class = "form-control",
+                                placeholder = "Type Full name"
+                                })
+                @Html.ValidationMessageFor(m => m.FullName, "", new { @class = "text-danger" })
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Phone)
+                    <span class="required">*</span>
+                    @Html.TextBoxFor(m => m.Phone, new {
+                                        @class = "form-control",
+                                        placeholder = "Type your phone"
+                                        })
+                    @Html.ValidationMessageFor(m => m.Phone, "", new { @class = "text-danger" })
+                </div>
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Email)
+                    <span class="required">*</span>
+                    @Html.TextBoxFor(m => m.Email, new {
+                                        @class = "form-control",
+                                        placeholder = "Type your email"
+                                        })
+                    @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Province)
+                    <span class="required">*</span>
+                    @Html.TextBoxFor(m => m.Province, new {
+                                        @class = "form-control",
+                                        placeholder = "Enter your province/city"
+                                        })
+                    @Html.ValidationMessageFor(m => m.Province, "", new { @class = "text-danger" })
+                </div>
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Ward)
+                    <span class="required">*</span>
+                    @Html.TextBoxFor(m => m.Ward, new {
+                                        @class = "form-control",
+                                        placeholder = "Enter your ward/commune"
+                                        })
+                    @Html.ValidationMessageFor(m => m.Ward, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(m => m.Address)
+                <span class="required">*</span>
+                @Html.TextBoxFor(m => m.Address, new {
+                                @class = "form-control",
+                                placeholder = "Ex: No. 20, 90 Alley"
+                                })
+                @Html.ValidationMessageFor(m => m.Address, "", new { @class = "text-danger" })
+            </div>
+
+            <div class="form-group checkbox-group">
+                <label>
+                    @Html.CheckBoxFor(m => m.SubscribeEmail)
+                    I would like to receive exclusive emails with discounts and product information
+                </label>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(m => m.OrderNotes)
+                @Html.TextAreaFor(m => m.OrderNotes, 4, 0, new {
+                                @class = "form-control",
+                                placeholder = "Notes about your order, e.g. special notes for delivery."
+                                })
+            </div>
+
+            @Html.HiddenFor(m => m.ShippingMethod)
+            @Html.HiddenFor(m => m.PaymentMethod)
+            @Html.HiddenFor(m => m.EstimatedDelivery)
+                        }
+        </section>
+
+        <!-- RIGHT SIDE: Your Order -->
+        <aside class="checkout-right">
+            <h2>Your order</h2>
+
+            <div class="order-container">
+                <div class="estimated-delivery">
+                    Estimated delivery: <strong>@Model.EstimatedDelivery</strong>
+                </div>
+
+                <div class="order-header-row">
+                    <span>Product</span>
+                    <span>Subtotal</span>
+                </div>
+
+                <div class="order-items-list">
+                    @foreach (var item in Model.CartItems)
+                    {
+                        <div class="order-item-row">
+                            <div class="product-name">
+                                @item.ProductName <span style="color:#777">× @item.Quantity</span>
+                            </div>
+                            <div class="product-total">
+                                @item.Subtotal.ToString("N0") VND
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span id="order-subtotal">@Model.Subtotal.ToString("N0") VND</span>
+                </div>
+
+                <div class="shipping-section">
+                    <h3>Shipping</h3>
+                    <label class="shipping-option">
+                        <input type="radio" name="shipping" value="express"
+                               @(Model.ShippingMethod == "express" ? "checked" : "")>
+                        <span>Express Delivery: 20.000 VND</span>
+                    </label>
+                    <label class="shipping-option">
+                        <input type="radio" name="shipping" value="instant"
+                               @(Model.ShippingMethod == "instant" ? "checked" : "")>
+                        <span>Instant Delivery: 50.000 VND</span>
+                    </label>
+                </div>
+
+                <div class="total-row">
+                    <span>Total</span>
+                    <span class="total-price-group">
+                        <span id="order-total">@Model.Total.ToString("N0") VND</span>
+                        <small>(includes VAT where applicable)</small>
+                    </span>
+                </div>
+
+                <div class="payment-box">
+
+                    <div class="payment-option">
+                        <div class="payment-top">
+                            <label>
+                                <input type="radio" name="payment" value="COD" checked>
+                                <span>Cash on Delivery (COD)</span>
+                            </label>
+                            <span class="payment-icon">💵</span>
+                        </div>
+                        <div class="payment-content">
+                            Thanh toán bằng tiền mặt khi nhận hàng.
+                        </div>
+                    </div>
+
+                    <div class="payment-option">
+                        <div class="payment-top">
+                            <label>
+                                <input type="radio" name="payment" value="momo">
+                                <span>Momo QRCode</span>
+                            </label>
+                            <img src="~/images/logo/momo.png" alt="Momo" class="payment-logo">
+                        </div>
+                    </div>
+
+                    <div class="payment-option">
+                        <div class="payment-top">
+                            <label>
+                                <input type="radio" name="payment" value="credit">
+                                <span>Credit / Debit Card</span>
+                            </label>
+                            <img src="~/images/logo/credit-card-icon.svg" alt="credit card icon" class="payment-logo">
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    document.addEventListener("DOMContentLoaded", function() {
+                        // Mặc định set COD
+                        document.querySelector('input[name="PaymentMethod"]').value = "COD";
+
+                        var radios = document.querySelectorAll('input[name="payment"]');
+                        radios.forEach(radio => {
+                            radio.addEventListener('change', function() {
+                                // Cập nhật giá trị vào hidden field PaymentMethod của ViewModel
+                                document.querySelector('input[name="PaymentMethod"]').value = this.value;
+                            });
+                        });
+                    });
+                </script>
+
+                <p class="privacy-policy">
+                    Your personal data will be used to process your order, support your experience throughout this website,
+                    and for other purposes described in our <a href="#">privacy policy</a>.
+                </p>
+
+                <button type="submit" form="checkout-form" class="btn-place-order">Place order</button>
+
+                <script>
+                    document.addEventListener("DOMContentLoaded", function () {
+                        var radios = document.querySelectorAll('input[name="payment"]');
+                        radios.forEach(radio => {
+                            radio.addEventListener('change', function () {
+                                document.querySelector('input[name="PaymentMethod"]').value = this.value;
+                            });
+                        });
+                    });
+                </script>
+            </div>
+        </aside>
+    </div>
+</main>
+
+@section Scripts {
+    <script src="~/js/cart.js"></script>
+}
+}

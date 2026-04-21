@@ -1,0 +1,364 @@
+﻿@model EyelixEyewear_Project.Models.ViewModels.ProductDetailViewModel
+
+@{
+    ViewData["Title"] = Model.Product.Name;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/detail-product.css">
+}
+
+<!-- BREADCRUMB -->
+<nav class="breadcrumb-nav">
+    <div class="container">
+        <ul class="breadcrumb">
+            <li><a href="@Url.Action("Index", "Home")">Home</a></li>
+
+            @if (Model.Product.Collection != null)
+            {
+                <li><span>/</span></li>
+                <li><a href="@Url.Action("Index", "Home")#collections">Collections</a></li>
+                <li><span>/</span></li>
+                <li><a href="@Url.Action("Collection", "Product", new { slug = Model.Product.Collection.Slug })">@Model.Product.Collection.Name</a></li>
+            }
+            else if (Model.Product.Category != null)
+            {
+                <li><span>/</span></li>
+                <li><a href="@Url.Action("Index", "Product", new { category = Model.Product.Category.Name })">@Model.Product.Category.Name</a></li>
+            }
+
+            <li><span>/</span></li>
+            <li class="active">@Model.Product.Name</li>
+        </ul>
+    </div>
+</nav>
+
+<main class="product-detail">
+    <div class="container">
+        <div class="product-wrapper">
+            <div class="product-gallery">
+                <div class="main-image">
+                    <img src="@Model.Product.ImageUrl" alt="@Model.Product.Name" id="mainImage">
+                </div>
+                <div class="thumbnail-gallery">
+                    <!-- Main product image -->
+                    <div class="thumbnail active" onclick="changeImage('@Model.Product.ImageUrl', this)">
+                        <img src="@Model.Product.ImageUrl" alt="Main View">
+                    </div>
+
+                    <!-- Additional images from ProductImages -->
+                    @if (Model.Product.ProductImages != null && Model.Product.ProductImages.Any())
+                    {
+                        @foreach (var img in Model.Product.ProductImages)
+                        {
+                            <div class="thumbnail" onclick="changeImage('@img.ImageUrl', this)">
+                                <img src="@img.ImageUrl" alt="@Model.Product.Name">
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="product-info-section">
+                <div class="product-meta">
+                    <p class="category-info">
+                        <span class="meta-label">Category:</span>
+                        <span class="meta-value">@Model.Product.Category?.Name</span>
+                    </p>
+                    <p class="sku-info">
+                        <span class="meta-label">SKU:</span>
+                        <span class="meta-value">@Model.Product.SKU</span>
+                </div>
+
+                <h1 class="product-title">@Model.Product.Name</h1>
+
+                <div class="product-price">
+                    @if (Model.Product.DiscountPrice.HasValue)
+                    {
+                        <span style="text-decoration: line-through; color: #999; font-size: 0.8em; margin-right: 10px;">
+                            @Model.Product.Price.ToString("#,##0") VND
+                        </span>
+                        <span>@Model.Product.DiscountPrice.Value.ToString("#,##0") VND</span>
+                    }
+                    else
+                    {
+                        <span>@Model.Product.Price.ToString("#,##0") VND</span>
+                    }
+                </div>
+
+                <div class="vat-label">VAT included</div>
+                <p class="stock-info">@Model.Product.Stock in stock</p>
+
+                <p class="product-description">
+                    @Model.Product.Description
+                </p>
+
+                @if (Model.Product.ProductVariants != null && Model.Product.ProductVariants.Any())
+                {
+                    <div class="color-section">
+                        <label>Variants</label>
+                        <div class="color-options">
+                            @foreach (var variant in Model.Product.ProductVariants)
+                            {
+                                <span class="badge bg-light text-dark border">@variant.VariantName</span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="quantity-cart-section">
+                    <div class="quantity-selector">
+                        <button type="button" class="quantity-btn" onclick="decreaseQuantity()">-</button>
+                        <input type="number" class="quantity-input" value="1" min="1" id="quantity" name="quantity">
+                        <button type="button" class="quantity-btn" onclick="increaseQuantity()">+</button>
+                    </div>
+
+                    <form asp-controller="Order" asp-action="AddToCart" method="post">
+                        <input type="hidden" name="productId" value="@Model.Product.Id" />
+                        <input type="hidden" name="quantity" value="1" />
+                        <button class="btn-add-cart">
+                            Add to cart
+                        </button>
+                    </form>
+                </div>
+
+                <div class="shipping-info">
+                    <h3>Shipping Information</h3>
+                    <table class="shipping-table">
+                        <thead>
+                            <tr>
+                                <th>Zone</th>
+                                <th>Shipping Method(s) & Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="zone-label">Local (HCMC)</td>
+                                <td>
+                                    <div class="shipping-option">
+                                        <strong>Fast Shipping</strong> – 20,000 VND
+                                    </div>
+                                    <div class="shipping-option">
+                                        <strong>Instant Shipping</strong> – 50,000 VND 
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="zone-label">Domestic</td>
+                                <td>
+                                    <div class="shipping-option">
+                                        <strong>Standard Shipping</strong> – 25,000 VND
+                                    </div>
+                                    <div class="shipping-option">
+                                        <strong>Fast Shipping</strong> – 30,000 VND
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="zone-label">Worldwide</td>
+                                <td>
+                                    <div class="shipping-option">
+                                        <strong>International Shipping</strong> – 250,000 VND
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="product-tabs">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="openTab(event, 'description')">Description</button>
+                <button class="tab-btn" onclick="openTab(event, 'additional')">Additional Info</button>
+                <button class="tab-btn" onclick="openTab(event, 'reviews')">Reviews (@Model.Product.Reviews.Count)</button>
+            </div>
+
+            <div id="description" class="tab-content active">
+                <div class="description-content">
+                    <p>@Model.Product.Description</p>
+                </div>
+            </div>
+
+            <div id="additional" class="tab-content">
+                <div class="description-content">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr style="border-bottom: 1px solid #e0e0e0;">
+                            <td style="padding: 15px; font-weight: 600;">Material</td>
+                            <td style="padding: 15px; color: #666;">@Model.Product.FrameMaterial</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #e0e0e0;">
+                            <td style="padding: 15px; font-weight: 600;">Shape</td>
+                            <td style="padding: 15px; color: #666;">@Model.Product.FrameShape</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #e0e0e0;">
+                            <td style="padding: 15px; font-weight: 600;">Color</td>
+                            <td style="padding: 15px; color: #666;">@Model.Product.Color</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div id="reviews" class="tab-content">
+                <div class="reviews-wrapper">
+
+                    <!-- Rating Summary -->
+                    @if (Model.Product.Reviews.Any())
+                    {
+                        var avgRating = Model.Product.Reviews.Average(r => r.Rating);
+                        var reviewCount = Model.Product.Reviews.Count;
+
+                        <div class="rating-summary">
+                            <div class="rating-overview">
+                                <div class="average-rating-number">@avgRating.ToString("F1")</div>
+                                <div class="stars-display">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        if (i <= Math.Floor(avgRating))
+                                        {
+                                            <i class="fas fa-star"></i>
+                                        }
+                                        else if (i == Math.Ceiling(avgRating) && avgRating % 1 != 0)
+                                        {
+                                            <i class="fas fa-star-half-alt"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="far fa-star"></i>
+                                        }
+                                    }
+                                </div>
+                                <div class="review-count-text">Based on @reviewCount review@(reviewCount > 1 ? "s" : "")</div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Reviews List -->
+                    <div class="reviews-list">
+                        @if (Model.Product.Reviews.Any())
+                        {
+                            @foreach (var review in Model.Product.Reviews.OrderByDescending(r => r.CreatedAt))
+                            {
+                                <div class="review-item">
+                                    <div class="review-header">
+                                        <div class="reviewer-info">
+                                            <div class="reviewer-avatar">
+                                                @review.User.FullName.Substring(0, 1).ToUpper()
+                                            </div>
+                                            <div>
+                                                <div class="reviewer-name">@review.User.FullName</div>
+                                                <div class="review-date">@review.CreatedAt.ToString("MMM dd, yyyy")</div>
+                                            </div>
+                                        </div>
+                                        <div class="review-rating-stars">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                if (i <= review.Rating)
+                                                {
+                                                    <i class="fas fa-star"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="far fa-star"></i>
+                                                }
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="review-comment">@review.Comment</div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="no-reviews">
+                                <i class="far fa-comment-dots"></i>
+                                <p>No reviews yet. Be the first to review this product!</p>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Submit Review Form -->
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <div class="submit-review-section" id="reviewFormSection">
+                            <h3>Write Your Review</h3>
+
+                            <form id="reviewForm">
+                                <input type="hidden" id="productId" value="@Model.Product.Id">
+                                <input type="hidden" id="selectedRating" value="0">
+
+                                <div class="form-group">
+                                    <label>Your Rating <span class="required">*</span></label>
+                                    <div class="star-rating-input">
+                                        <i class="far fa-star" data-rating="1"></i>
+                                        <i class="far fa-star" data-rating="2"></i>
+                                        <i class="far fa-star" data-rating="3"></i>
+                                        <i class="far fa-star" data-rating="4"></i>
+                                        <i class="far fa-star" data-rating="5"></i>
+                                    </div>
+                                    <span id="ratingError" class="error-message" style="display: none;">Please select a rating</span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Your Review <span class="required">*</span></label>
+                                    <textarea id="reviewComment"
+                                          rows="5"
+                                          placeholder="Share your experience with this product... (minimum 10 characters)"
+                                          maxlength="1000"></textarea>
+                                    <span id="commentError" class="error-message" style="display: none;">Review must be at least 10 characters</span>
+                                </div>
+
+                                <button type="submit" class="btn-submit-review">
+                                    <i class="fas fa-paper-plane"></i> Submit Review
+                                </button>
+                            </form>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="login-prompt">
+                            <i class="fas fa-lock"></i>
+                            <p>Please <a href="@Url.Action("Login", "Account")" style="color: #f08438; font-weight: 600;">login</a> to write a review</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+        <div class="related-products">
+            <h2>Related Products</h2>
+            <div class="related-grid">
+                @foreach (var related in Model.RelatedProducts)
+                {
+                        <a href="@Url.Action("Detail", "Product", new { id = related.Id })" class="product-card">
+                        <div class="product-card-image">
+                            @if (related.DiscountPrice.HasValue)
+                            {
+                                <span class="sale-badge">SALE</span>
+                            }
+                            <img src="@related.ImageUrl" alt="@related.Name">
+                        </div>
+                        <div class="product-card-title">@related.Name</div>
+                        <div class="product-card-price">
+                            @if (related.DiscountPrice.HasValue)
+                            {
+                                <del>@related.Price.ToString("#,##0") VND</del>
+                                <span>@related.DiscountPrice.Value.ToString("#,##0") VND</span>
+                            }
+                            else
+                            {
+                                <span>@related.Price.ToString("#,##0") VND</span>
+                            }
+                        </div>
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    <script src="~/js/detail-product.js"></script>
+    <script src="~/js/cart.js"></script>
+    <script src="~/js/review.js"></script>
+}

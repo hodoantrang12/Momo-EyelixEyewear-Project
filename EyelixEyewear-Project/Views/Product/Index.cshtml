@@ -1,0 +1,444 @@
+﻿@model IEnumerable<EyelixEyewear_Project.Models.Product>
+
+@{
+    ViewData["Title"] = ViewBag.CurrentCategory != null
+        ? ViewBag.CurrentCategory + " Collection"
+        : "All Products";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/products.css">
+}
+
+@{
+    //Xác định ảnh banner và nội dung dựa vào category
+    string bannerImage = "/images/banner/jaehyun.jpg"; 
+    string pageTitle = "All Products";
+    string pageSubtitle = "Discover our complete sustainable and stylish eyewear collection";
+
+    if (ViewBag.CurrentCategory != null)
+    {
+        var category = ViewBag.CurrentCategory.ToString().ToLower();
+
+        if (category == "glasses")
+        {
+            bannerImage = "/images/banner/glasses-banner.jpg";
+            pageTitle = "Glasses Collection";
+            pageSubtitle = "Optical glasses for everyday style and comfort";
+        }
+        else if (category == "sunglasses")
+        {
+            bannerImage = "/images/banner/sunglasses-banner.jpg";
+            pageTitle = "Sunglasses Collection";
+            pageSubtitle = "Premium sunglasses for sun protection and fashion";
+        }
+    }
+    else
+    {
+        // All Products
+        bannerImage = "/images/banner/jaehyun.jpg";
+        pageTitle = "All Products";
+        pageSubtitle = "Discover our complete sustainable and stylish eyewear collection";
+    }
+}
+
+<div class="hero-banner">
+    <img src="@bannerImage" alt="@pageTitle Banner" class="hero-banner-image"
+         onerror="this.src='/images/banner/default-banner.jpg'">
+    <div class="page-title">
+        <h1>@pageTitle</h1>
+        <p>@pageSubtitle</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="product-content-wrapper">
+
+        <aside class="sidebar product-sidebar">
+            @* ================= PRICE RANGE FILTER ================= *@
+            <div class="filter-section-sidebar">
+                <div class="filter-header" onclick="toggleFilterSection(this)">
+                    <span>Filter by Price</span>
+                </div>
+                <div class="filter-content price-filter-content">
+                    <div class="price-range-slider">
+                        <div class="price-input-wrapper">
+                            <div class="price-field">
+                                <label>Min. Price</label>
+                                <input type="number"
+                                       id="minPrice"
+                                       class="price-input"
+                                       value="50000"
+                                       min="0"
+                                       step="10000">
+                                <span class="currency">VND</span>
+                            </div>
+                            <div class="price-separator">-</div>
+                            <div class="price-field">
+                                <label>Max. Price</label>
+                                <input type="number"
+                                       id="maxPrice"
+                                       class="price-input"
+                                       value="800000"
+                                       min="0"
+                                       step="10000">
+                                <span class="currency">VND</span>
+                            </div>
+                        </div>
+
+                        <div class="slider-container">
+                            <div class="slider-track"></div>
+                            <input type="range"
+                                   id="minRange"
+                                   min="0"
+                                   max="1000000"
+                                   value="50000"
+                                   step="10000"
+                                   class="range-input">
+                            <input type="range"
+                                   id="maxRange"
+                                   min="0"
+                                   max="1000000"
+                                   value="800000"
+                                   step="10000"
+                                   class="range-input">
+                        </div>
+
+                        <button class="btn-apply-price" onclick="applyPriceFilter()">
+                            Apply Price Filter
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            @* ================= MATERIAL FILTER ================= *@
+            <div class="filter-section-sidebar">
+                <div class="filter-header" onclick="toggleFilterSection(this)">
+                    <span>Material</span>
+                    <span class="toggle-icon">▲</span>
+                </div>
+
+                <ul class="filter-content filter-list">
+                    @{
+                        var materials = Model
+                        .Where(p => !string.IsNullOrEmpty(p.FrameMaterial))
+                        .Select(p => p.FrameMaterial)
+                        .Distinct()
+                        .OrderBy(m => m)
+                        .ToList();
+                    }
+
+                    @foreach (var material in materials)
+                    {
+                        <li class="filter-option"
+                            data-filter-type="material"
+                            data-value="@material"
+                            onclick="toggleFilter(this)">
+                            <span class="filter-checkbox">☐</span>
+                            @material
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            @* ================= FRAME SHAPE FILTER ================= *@
+            <div class="filter-section-sidebar">
+                <div class="filter-header" onclick="toggleFilterSection(this)">
+                    <span>Frame Shape</span>
+                    <span class="toggle-icon">▲</span>
+                </div>
+
+                <ul class="filter-content filter-list">
+                    @{
+                        var shapes = Model
+                        .Where(p => !string.IsNullOrEmpty(p.FrameShape))
+                        .Select(p => p.FrameShape)
+                        .Distinct()
+                        .OrderBy(s => s)
+                        .ToList();
+                    }
+
+                    @foreach (var shape in shapes)
+                    {
+                        <li class="filter-option"
+                            data-filter-type="shape"
+                            data-value="@shape"
+                            onclick="toggleFilter(this)">
+                            <span class="filter-checkbox">☐</span>
+                            @shape
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            @* ================= COLOR FILTER ================= *@
+            <div class="filter-section-sidebar">
+                <div class="filter-header" onclick="toggleFilterSection(this)">
+                    <span>Color</span>
+                    <span class="toggle-icon">▲</span>
+                </div>
+
+                <ul class="filter-content filter-list">
+                    @{
+                        var colors = Model
+                        .Where(p => !string.IsNullOrEmpty(p.Color))
+                        .Select(p => p.Color)
+                        .Distinct()
+                        .OrderBy(c => c)
+                        .ToList();
+                    }
+
+                    @foreach (var color in colors)
+                    {
+                        <li class="filter-option"
+                            data-filter-type="color"
+                            data-value="@color"
+                            onclick="toggleFilter(this)">
+                            <span class="filter-checkbox">☐</span>
+                            @color
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            @* ================= RESET FILTER BUTTON ================= *@
+            <div class="filter-reset-wrapper">
+                <button class="btn-reset-filters" onclick="resetAllFilters()">
+                    Reset All Filters
+                </button>
+            </div>
+
+        </aside>
+
+
+        <main class="product-main-content">
+            <div class="filter-section">
+                <div class="filters">
+                    <button class="filter-btn active" data-filter="all">All Products</button>
+                    <button class="filter-btn" data-filter="bestseller">Bestsellers</button>
+                    <button class="filter-btn" data-filter="new">New In</button>
+                    <button class="filter-btn" data-filter="sale">Sale</button>
+                </div>
+                <select class="sort-dropdown" id="sortBy">
+                    <option value="featured">Featured</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="newest">Newest</option>
+                </select>
+            </div>
+
+            <div class="products-grid" id="productsGrid">
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var item in Model)
+                    {
+                        // === BƯỚC 1: TÍNH RATING ĐỘNG TỪ DATABASE ===
+                        double avgRating = 0;
+                        int totalReviews = 0;
+
+                        if (item.Reviews != null && item.Reviews.Any())
+                        {
+                            var approvedReviews = item.Reviews.Where(r => r.IsApproved).ToList();
+
+                            if (approvedReviews.Any())
+                            {
+                                avgRating = approvedReviews.Average(r => r.Rating);
+                                totalReviews = approvedReviews.Count;
+                            }
+                        }
+
+                        double displayRating = Math.Round(avgRating * 2) / 2;
+
+                        // === BƯỚC 2: XÁC ĐỊNH BADGE (New/Sale) ===
+                        string badgeClass = "";
+                        string badgeText = "";
+                        if (item.DiscountPrice.HasValue)
+                        {
+                            badgeClass = "sale";
+                            badgeText = "Sale";
+                        }
+                        else if (item.CreatedAt > DateTime.Now.AddDays(-30))
+                        {
+                            badgeClass = "new";
+                            badgeText = "New";
+                        }
+
+                        // === BƯỚC 3: XÁC ĐỊNH FILTER CLASSES (MỚI THÊM) ===
+                        var filterClasses = new List<string> { "all" };
+
+                        // Bestseller: Có nhiều reviews hoặc rating cao
+                        if (totalReviews >= 3 || avgRating >= 4.5)
+                        {
+                            filterClasses.Add("bestseller");
+                        }
+
+                        // New: Sản phẩm mới trong 30 ngày
+                        if (item.CreatedAt > DateTime.Now.AddDays(-30))
+                        {
+                            filterClasses.Add("new");
+                        }
+
+                        // Sale: Có giá giảm
+                        if (item.DiscountPrice.HasValue)
+                        {
+                            filterClasses.Add("sale");
+                        }
+
+                        var filterString = string.Join(" ", filterClasses);
+
+                        // === BƯỚC 4: RENDER HTML ===
+                        <div class="product-item"
+                             data-price="@((int)item.Price)"
+                             data-product-id="@item.Id"
+                             data-material="@(item.FrameMaterial ?? "")"
+                             data-shape="@(item.FrameShape ?? "")"
+                             data-color="@(item.Color ?? "")"
+                             data-rating="@avgRating.ToString("0.0")"
+                             data-filter="@filterString">
+
+                            <div class="product-image">
+                                <a href="@Url.Action("Detail", "Product", new { id = item.Id })" title="@item.Name">
+                                    <img src="@item.ImageUrl" alt="@item.Name" style="transition: opacity 0.3s ease;">
+                                </a>
+                                @if (!string.IsNullOrEmpty(badgeClass))
+                                {
+                                    <div class="product-badge @badgeClass">@badgeText</div>
+                                }
+                            </div>
+
+                            <div class="product-info">
+                                <div class="product-category">@item.Category?.Name</div>
+
+                                <div class="product-title">
+                                    <a href="@Url.Action("Detail", "Product", new { id = item.Id })" class="product-title-link">@item.Name</a>
+                                </div>
+
+                                @if (item.ProductVariants != null && item.ProductVariants.Any())
+                                {
+                                    <div class="product-variations">
+                                        <div class="color-option active"
+                                             onclick="changeProductImage(this, '@item.ImageUrl')"
+                                             title="@item.Color"
+                                             style="background-color: @(item.Color?.ToLower() ?? "black")"></div>
+
+                                        @foreach (var variant in item.ProductVariants)
+                                        {
+                                            <div class="color-option"
+                                                 onclick="changeProductImage(this, '@item.ImageUrl')"
+                                                 title="@variant.VariantName"
+                                                 style="background-color: @variant.VariantName.ToLower()">
+                                            </div>
+                                        }
+                                    </div>
+                                }
+
+                                <div class="product-rating">
+                                    <div class="star">
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            if (i <= Math.Floor(displayRating))
+                                            {
+                                                <i class="fas fa-star"></i>
+                                            }
+                                            else if (i == Math.Ceiling(displayRating) && displayRating % 1 != 0)
+                                            {
+                                                <i class="fas fa-star-half-alt"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="far fa-star"></i>
+                                            }
+                                        }
+                                    </div>
+
+                                    @if (totalReviews > 0)
+                                    {
+                                        <span class="rating-count" title="@avgRating.ToString("0.0") stars average">
+                                            (@totalReviews)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="rating-count no-reviews">
+                                            (No reviews)
+                                        </span>
+                                    }
+                                </div>
+
+                                <div class="product-price @(item.DiscountPrice.HasValue ? "sale" : "")">
+                                    @if (item.DiscountPrice.HasValue)
+                                    {
+                                        <span class="original">@item.Price.ToString("#,##0") VND</span>
+                                        <span>@item.DiscountPrice.Value.ToString("#,##0") VND</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@item.Price.ToString("#,##0") VND</span>
+                                    }
+                                </div>
+
+                                <div class="product-actions">
+                                    <form asp-controller="Order" asp-action="AddToCart" method="post">
+                                        <input type="hidden" name="productId" value="@item.Id" />
+                                        <input type="hidden" name="quantity" value="1" />
+                                        <button class="btn-add-cart" onclick="addToCartAjax(@item.Id)">
+                                            Add to cart
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <div style="font-size: 12px; color: #687279; margin-top: 0.5rem;">
+                                    @(item.Stock > 0 ? $"{item.Stock} in stock" : "Out of stock")
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p>No products found.</p>
+                }
+            </div>
+            <!-- PAGINATION -->
+            @if (ViewBag.TotalPages > 1)
+            {
+                <div class="pagination-wrapper">
+                    <div class="pagination">
+                        @if (ViewBag.CurrentPage > 1)
+                        {
+                            <a href="?page=@(ViewBag.CurrentPage - 1)@(ViewBag.CurrentCategory != null ? "&category=" + ViewBag.CurrentCategory : "")"
+                               class="page-link">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        }
+
+                        @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                        {
+                            <a href="?page=@i@(ViewBag.CurrentCategory != null ? "&category=" + ViewBag.CurrentCategory : "")"
+                               class="page-link @(i == ViewBag.CurrentPage ? "active" : "")">
+                                @i
+                            </a>
+                        }
+
+                        @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+                        {
+                            <a href="?page=@(ViewBag.CurrentPage + 1)@(ViewBag.CurrentCategory != null ? "&category=" + ViewBag.CurrentCategory : "")"
+                               class="page-link">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        }
+                    </div>
+
+                    <div class="pagination-info">
+                        Showing @((ViewBag.CurrentPage - 1) * 9 + 1) - @(Math.Min(ViewBag.CurrentPage * 9, ViewBag.TotalProducts))
+                        of @ViewBag.TotalProducts products
+                    </div>
+                </div>
+            }
+        </main>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/products.js"></script>
+}

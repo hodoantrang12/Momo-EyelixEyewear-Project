@@ -1,0 +1,217 @@
+﻿
+@using EyelixEyewear_Project.Models.ViewModels
+@model EyelixEyewear_Project.Models.ViewModels.HomeViewModel
+
+@{
+    ViewData["Title"] = "Carbon Negative Glasses";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/slide.css" />
+}
+
+<!-- Hero Section -->
+<section class="hero">
+    <video autoplay muted loop playsinline class="hero-video">
+        <source src="https://eyelix-eyewear.website/wp-content/uploads/2025/10/Untitled-video-Made-with-Clipchamp-1.mp4" type="video/mp4">
+    </video>
+    <div class="hero-content">
+        <h1>Be Seen<br>Be Green</h1>
+        <a asp-controller="Home" asp-action="About" class="btn-primary">discover us</a>
+    </div>
+</section>
+
+<!-- New Arrivals -->
+<section class="new-arrivals">
+    <div class="container-fluid" style="padding: 0 60px;">
+
+        <div class="section-header">
+            <h2>New Arrival</h2>
+            <div class="slider-nav">
+                <button class="next-btn" id="btnNext">&#10095;</button>
+            </div>
+        </div>
+
+        <div class="product-slider-container">
+            <div class="product-track" id="productTrack">
+                @if (Model.NewArrivals != null && Model.NewArrivals.Any())
+                {
+                    @foreach (var product in Model.NewArrivals)
+                    {
+                        <div class="product-slide-item">
+                            <div class="product-card" data-product-id="@product.Id">
+                                <div class="product-image">
+                                    @if (product.IsSale)
+                                    {
+                                        <span class="sale-badge">SALE</span>
+                                    }
+                                    else if (product.IsNew)
+                                    {
+
+                                        <span class="new-badge">NEW</span>
+                                    }
+
+                                    <a asp-controller="Product" asp-action="Detail" asp-route-id="@product.Id">
+                                        <img src="@product.ImageUrl" alt="@product.Name">
+                                    </a>
+                                </div>
+                                <div class="product-info">
+                                    <h3><a asp-controller="Products" asp-action="Details" asp-route-id="@product.Id">@product.Name</a></h3>
+                                    <div class="product-price">
+                                        @if (product.DiscountPrice.HasValue)
+                                        {
+                                            <span class="original-price" style="text-decoration: line-through; color: #999;">@product.Price.ToString("n0")VND</span>
+                                            <span class="current-price">@product.DiscountPrice.Value.ToString("n0")VND</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="current-price">@product.Price.ToString("n0")VND</span>
+                                        }
+                                    </div>
+                                    <form asp-controller="Order" asp-action="AddToCart" method="post" style="display:inline;">
+                                        <input type="hidden" name="productId" value="@product.Id" /> <input type="hidden" name="quantity" value="1" />
+                                        <button class="btn-add-cart" onclick="addToCartAjax(@product.Id)">
+                                            Add to cart
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Material Collection -->
+<section class="collections-highlight">
+    <div class="collection-item">
+        <div class="collection-content">
+            <span class="collection-label">COLLECTION / NEW MATERIAL</span>
+            <h2>RECYCLED ALUMINIUM</h2>
+            <p>Meet the newest addition in our 2025 collection Recycled Aluminium. Lightweight, durable, and distinctively modern, this new direction allows for bold, yet clean silhouettes, without compromising on comfort.</p>
+            <a asp-controller="Home" asp-action="Collection" asp-route-slug="recycled-aluminium" class="btn-primary">VIEW ALL</a>
+        </div>
+        <div class="collection-image">
+            <img src="~/images/collections/aluminium.webp" alt="Recycled Aluminium">
+        </div>
+    </div>
+</section>
+
+<!-- Collections Slider -->
+<section class="collections-slider">
+    <div class="container">
+        <h2>Collections</h2>
+    </div>
+
+    <div class="collections-carousel">
+        <!-- Slide 1: Fall/Winter 2025 -->
+        <div class="collection-slide active">
+            <div class="slide-background">
+                <img src="~/images/collections/fall-winter-bg.webp" alt="Fall Winter 2025">
+            </div>
+            <div class="slide-content">
+                <h3>FALL/WINTER 2025</h3>
+                <p>Step into crisp autumn days with our sustainable eyewear collection, featuring versatile optical frames with magnetic UV-protective clip-ons.</p>
+                <a asp-controller="Home" asp-action="Collection" asp-route-slug="fall-winter-2025" class="btn-secondary">VIEW ALL</a>
+            </div>
+            <div class="slide-images">
+                <img src="~/images/collections/fall-winter-1.webp" alt="Collection Image 1">
+                <img src="~/images/collections/fall-winter-2.webp" alt="Collection Image 2">
+            </div>
+        </div>
+
+        <!-- Slide 2: Wonwoo's Choice -->
+        <div class="collection-slide">
+            <div class="slide-background">
+                <img src="~/images/collections/wonwoo-bg.jpg" alt="Wonwoo Choice">
+            </div>
+            <div class="slide-content">
+                <h3>WONWOO'S CHOICE</h3>
+                <p>Known for his quiet charisma and intellectual charm, our ambassador Wonwoo embodies a timeless sense of style.</p>
+                <a asp-controller="Home" asp-action="Collection" asp-route-slug="wonwoo-choice" class="btn-secondary">VIEW ALL</a>
+            </div>
+            <div class="slide-images">
+                <img src="~/images/collections/wonwoo-1.jpg" alt="Wonwoo 1">
+                <img src="~/images/collections/wonwoo-2.jpg" alt="Wonwoo 2">
+            </div>
+        </div>
+
+        <!-- Slide 3: The Sun Code -->
+        <div class="collection-slide">
+            <div class="slide-background">
+                <img src="~/images/collections/sun-code-bg.jpg" alt="The Sun Code">
+            </div>
+            <div class="slide-content">
+                <h3>THE SUN CODE</h3>
+                <p>Bold, magnetic, and effortlessly cool – Mingyu's presence commands attention, and this collection captures that same unstoppable energy.</p>
+                <a asp-controller="Home" asp-action="Collection" asp-route-slug="the-sun-code" class="btn-secondary">VIEW ALL</a>
+            </div>
+            <div class="slide-images">
+                <img src="~/images/collections/sun-code-1.jpg" alt="Sun Code 1">
+                <img src="~/images/collections/sun-code-2.png" alt="Sun Code 2">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Instagram Gallery -->
+<section class="instagram-fullwidth">
+    <div class="instagram-header">
+        <h2>YOU MAKE SUSTAINABILITY LOOK GOOD</h2>
+    </div>
+    <div class="instagram-carousel-wrapper">
+        <div class="instagram-carousel">
+            @for (int i = 1; i <= 6; i++)
+            {
+                <div class="instagram-item">
+                    <img src="~/images/instagram/img@(i).webp" alt="Instagram @i">
+                </div>
+            }
+            @* Duplicate for seamless loop *@
+            @for (int i = 1; i <= 6; i++)
+            {
+                <div class="instagram-item">
+                    <img src="~/images/instagram/img@(i).webp" alt="Instagram @i">
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Carbon Negative Section -->
+<section class="carbon-negative" style="background-image: url('/images/blog/carbon-bg.jpg');">
+    <div class="container">
+        <h2>Carbon Footprint Negative</h2>
+        <p>Our mission has led Eyelix Eyewear to become one of the very first carbon negative eyewear brands in Vietnam.</p>
+    </div>
+</section>
+
+<!-- Info Boxes -->
+<section class="info-boxes">
+    <div class="info-box" style="background-image: url('/images/blog/contact-bg.jpg');">
+        <h3>CONTACT US</h3>
+        <a asp-controller="Home" asp-action="Contact" class="btn-secondary">find out more</a>
+    </div>
+    <div class="info-box" style="background-image: url('/images/blog/terms-bg.jpg');">
+        <h3>TERMS AND CONDITIONS</h3>
+        <a asp-controller="Home" asp-action="Terms" class="btn-secondary">find out more</a>
+    </div>
+</section>
+
+<!-- Newsletter -->
+<section class="newsletter">
+    <div class="container">
+        <h2>Newsletter Updates</h2>
+        <p>Subscribe to receive emails on new product arrivals & special offers</p>
+        <form class="newsletter-form" asp-controller="Home" asp-action="Subscribe" method="post">
+            <input type="email" name="email" placeholder="Email address" required>
+            <button type="submit" class="btn-primary">Subscribe</button>
+        </form>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="~/js/slide.js"></script>
+}

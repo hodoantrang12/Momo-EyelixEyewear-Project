@@ -1,0 +1,475 @@
+﻿@model EyelixEyewear_Project.Models.ViewModels.UserProfileViewModel
+@{
+    ViewData["Title"] = "My Account";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/account.css">
+    
+}
+
+<div class="container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <p>Customer Dashboard</p>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">📦</div>
+            <div class="stat-value">@Model.Orders.Count</div>
+            <div class="stat-label">Total Orders</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-value">@Model.Orders.Count(o => o.Status == "Processing")</div>
+            <div class="stat-label">Processing</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value">@Model.Orders.Count(o => o.Status == "Completed")</div>
+            <div class="stat-label">Completed</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-value">@Model.Orders.Sum(o => o.TotalAmount).ToString("N0")</div>
+            <div class="stat-label">Total Spent (VND)</div>
+        </div>
+    </div>
+
+    <div class="account-wrapper">
+        <div class="sidebar">
+            <div class="sidebar-item active" onclick="showSection('dashboard', this)">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" /></svg>
+                Dashboard
+            </div>
+            <div class="sidebar-item" onclick="showSection('orders', this)">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" /></svg>
+                Orders
+            </div>
+            <div class="sidebar-item" onclick="showSection('addresses', this)">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" /></svg>
+                Addresses
+            </div>
+            <div class="sidebar-item" onclick="showSection('account-details', this)">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
+                Account details
+            </div>
+            <a href="@Url.Action("Logout", "Account")" class="sidebar-item" style="text-decoration: none; color: inherit;">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" /></svg>
+                Logout
+            </a>
+        </div>
+
+        <div class="content">
+
+            <div id="dashboard-section" class="section-content active">
+                <div class="welcome-banner">
+                    <div class="user-avatar">
+                        @Model.FullName.Substring(0, 1).ToUpper()
+                    </div>
+                    <div>
+                        <h2>Hello, @Model.FullName</h2>
+                        <p>Welcome back to your account dashboard.</p>
+                    </div>
+                </div>
+                <p style="color: #687279; line-height: 1.8;">From your account dashboard you can view your <a href="#" onclick="showSection('orders'); return false;" style="color: #f08438; font-weight: 600;">recent orders</a>, manage your <a href="#" onclick="showSection('addresses'); return false;" style="color: #f08438; font-weight: 600;">shipping and billing addresses</a>, and <a href="#" onclick="showSection('account-details'); return false;" style="color: #f08438; font-weight: 600;">edit your password and account details</a>.</p>
+            </div>
+
+            <div id="orders-section" class="section-content" style="display:none;">
+                <h2 style="margin-bottom: 20px;">Order History</h2>
+                @if (Model.Orders.Any())
+                {
+                    <div class="orders-table-wrapper">
+                        <table class="orders-table">
+                            <thead>
+                                <tr>
+                                    <th>Order</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Total</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var order in Model.Orders)
+                                {
+                                    <tr>
+                                        <td>#@order.OrderNumber</td>
+                                        <td>@order.OrderDate.ToString("dd/MM/yyyy")</td>
+                                        <td>
+                                            @{
+                                                string statusClass = order.Status.ToLower() switch
+                                                {
+                                                    "completed" => "status-completed",
+                                                    "processing" => "status-processing",
+                                                    "cancelled" => "status-cancelled",
+                                                    _ => "status-processing"
+                                                };
+                                            }
+                                            <span class="status-badge @statusClass">@order.Status</span>
+                                        </td>
+                                        <td>@order.TotalAmount.ToString("#,##0") VND</td>
+                                        <td>
+                                            <a href="#" class="view-btn" onclick="viewOrderDetail(@order.Id); return false;">View</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <p>You haven't placed any orders yet.</p>
+                        <a href="@Url.Action("Index", "Product")" class="btn-primary">Start Shopping</a>
+                    </div>
+                }
+            </div>
+
+            <div id="addresses-section" class="section-content" style="display:none;">
+                <h2 style="margin-bottom: 20px;">Addresses</h2>
+                <div class="addresses-grid">
+                    <div class="address-card">
+                        <div class="address-header">
+                            <h3>Billing Address</h3>
+                            <a href="#" class="edit-link" onclick="showSection('account-details')">Edit</a>
+                        </div>
+                        <div class="address-body">
+                            <p><strong>@Model.FullName</strong></p>
+                            <p>@Model.Address</p>
+                            <p>Phone: @Model.Phone</p>
+                            <p>Email: @Model.Email</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="account-details-section" class="section-content" style="display:none;">
+                <h2 style="margin-bottom: 20px;">Account Details</h2>
+
+                <form asp-action="UpdateProfile" method="post" class="account-details-form">
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Full Name *</label>
+                            <input asp-for="FullName" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input asp-for="Phone" class="form-input">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Display Name (Username)</label>
+                        <input asp-for="Username" class="form-input" readonly style="background-color: #f9f9f9;">
+                        <small>Username cannot be changed.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input asp-for="Email" class="form-input" readonly style="background-color: #f9f9f9;">
+                        <small>Contact support to change email.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Address</label>
+                        <input asp-for="Address" class="form-input">
+                    </div>
+
+                    <fieldset style="border: 1px solid #e0e0e0; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                        <legend style="padding: 0 10px; font-weight: 600;">Password Change</legend>
+                        <div class="form-group">
+                            <label>Current Password (leave blank to keep unchanged)</label>
+                            <input asp-for="CurrentPassword" class="form-input" type="password">
+                        </div>
+                        <div class="form-group">
+                            <label>New Password (leave blank to keep unchanged)</label>
+                            <input asp-for="NewPassword" class="form-input" type="password">
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm New Password</label>
+                            <input asp-for="ConfirmNewPassword" class="form-input" type="password">
+                        </div>
+                    </fieldset>
+                     <button type="submit" class="save-changes-btn" style="margin-top: 20px;">Save Changes</button>
+                </form>
+
+                                                    <!-- MFA Section trong Profile -->
+                                                    <div style="border: 1px solid #e0e0e0; padding: 20px; border-radius: 8px; margin-top: 20px; background: #fafafa;">
+                                                        <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 5px;">Xác thực 2 yếu tố (MFA)</h3>
+
+                                                        @if (Model.IsMfaEnabled)
+                                                        {
+                                                            <!-- Đã bật MFA -->
+                                                            <p style="color: #4caf50; font-size: 14px; margin-bottom: 15px;">
+                                                                MFA đang <strong>bật</strong> — Tài khoản của bạn được bảo vệ tốt hơn.
+                                                            </p>
+                                                            <form asp-action="MfaDisable" method="post" onsubmit="return confirm('Bạn có chắc muốn tắt MFA không?')">
+                                                                @Html.AntiForgeryToken()
+                                                                <button type="submit" style="padding: 10px 20px; background: #e53935; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                                                                    Tắt xác thực 2 bước
+                                                                </button>
+                                                            </form>
+                                                        }
+                                                        else
+                                                        {
+                                                            <!-- Chưa bật MFA -->
+                                                            <p style="color: #777; font-size: 14px; margin-bottom: 15px;">
+                                                                MFA đang tắt - Bật để bảo vệ tài khoản tốt hơn.
+                                                            </p>
+                                                            <a asp-action="MfaSetup"
+                                                                   style="display: inline-block; padding: 10px 20px; background: #000; color: white; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+                                                                Bật xác thực 2 bước
+                                                            </a>
+                                                        }
+                                                    </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal xem chi tiết đơn hàng -->
+<div id="orderDetailModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Order Details</h2>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body" id="orderDetailBody">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+                <p>Loading order details...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // JS đơn giản để chuyển tab (Dashboard <-> Orders <-> Addresses)
+        function showSection(sectionId, clickedElement) {
+            // 1. Ẩn tất cả section
+            document.querySelectorAll('.section-content').forEach(el => {
+                el.style.display = 'none';
+                el.classList.remove('active');
+            });
+
+            // 2. Hiện section được chọn
+            const target = document.getElementById(sectionId + '-section');
+            if (target) {
+                target.style.display = 'block';
+                target.classList.add('active');
+            }
+
+            // 3. Update active class cho sidebar
+            if (clickedElement) {
+                document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+                clickedElement.classList.add('active');
+            } else {
+                // Trường hợp gọi từ link nội bộ (ví dụ: bấm "recent orders" ở dashboard)
+                // Cần tìm sidebar item tương ứng để highlight
+                document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+                // Logic tìm sidebar item tương ứng (đơn giản hóa)
+                const items = document.querySelectorAll('.sidebar-item');
+                if(sectionId === 'dashboard') items[0].classList.add('active');
+                if(sectionId === 'orders') items[1].classList.add('active');
+                if(sectionId === 'addresses') items[2].classList.add('active');
+                if(sectionId === 'account-details') items[3].classList.add('active');
+            }
+        }
+
+        // === MODAL FUNCTIONS ===
+        const modal = document.getElementById('orderDetailModal');
+        const closeBtn = document.querySelector('.close-modal');
+
+        // Đóng modal khi click nút X
+        closeBtn.onclick = function() {
+            modal.classList.remove('show');
+        }
+
+        // Đóng modal khi click bên ngoài
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.classList.remove('show');
+            }
+        }
+
+        // Đóng modal khi nhấn ESC
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && modal.classList.contains('show')) {
+                modal.classList.remove('show');
+            }
+        });
+
+        // Hàm xem chi tiết đơn hàng
+        function viewOrderDetail(orderId) {
+            // Hiển thị modal với loading
+            modal.classList.add('show');
+            document.getElementById('orderDetailBody').innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Loading order details...</p>
+                </div>
+            `;
+
+            // Gọi API lấy dữ liệu
+            fetch('@Url.Action("GetOrderDetail", "Account")?orderId=' + orderId)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayOrderDetail(data.order);
+                    } else {
+                        document.getElementById('orderDetailBody').innerHTML = `
+                            <div class="error-message">
+                                <p>❌ ${data.message || 'Unable to load order details'}</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('orderDetailBody').innerHTML = `
+                        <div class="error-message">
+                            <p>❌ An error occurred while loading order details</p>
+                        </div>
+                    `;
+                });
+        }
+
+        // Hiển thị chi tiết đơn hàng
+        function displayOrderDetail(order) {
+            const statusClass = order.status.toLowerCase() === 'completed' ? 'status-completed' :
+                               order.status.toLowerCase() === 'processing' ? 'status-processing' :
+                               'status-cancelled';
+
+            let html = `
+                <div class="order-info-grid">
+                    <div class="order-info-section">
+                        <h3>Order Information</h3>
+                        <div class="info-row">
+                            <span class="info-label">Order Number:</span>
+                            <span class="info-value order-number">#${order.orderNumber}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Order Date:</span>
+                            <span class="info-value">${order.orderDate}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Status:</span>
+                            <span class="status-badge ${statusClass}">${order.status}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Payment Method:</span>
+                            <span class="info-value">${order.paymentMethod}</span>
+                        </div>
+                    </div>
+
+                    <div class="order-info-section">
+                        <h3>Shipping Information</h3>
+                        <div class="info-row">
+                            <span class="info-label">Recipient:</span>
+                            <span class="info-value">${order.shippingName}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Phone:</span>
+                            <span class="info-value">${order.shippingPhone}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Address:</span>
+                            <span class="info-value">${order.shippingAddress}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Ward/District/City:</span>
+                            <span class="info-value">${order.shippingWard}, ${order.shippingDistrict}, ${order.shippingCity}</span>
+                        </div>
+                    </div>
+                </div>
+
+                ${order.note ? `
+                <div class="order-note">
+                    <h3>Note</h3>
+                    <p>${order.note}</p>
+                </div>
+                ` : ''}
+
+                <div class="order-items">
+                    <h3>Products</h3>
+                    <table class="items-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            // Thêm từng sản phẩm
+            order.items.forEach(item => {
+                html += `
+                    <tr>
+                        <td>
+                            <div class="product-info">
+                                <img src="${item.productImage}" alt="${item.productName}">
+                                <span>${item.productName}</span>
+                            </div>
+                        </td>
+                        <td>${item.price.toLocaleString('vi-VN')} VND</td>
+                        <td>${item.quantity}</td>
+                        <td>${item.subtotal.toLocaleString('vi-VN')} VND</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="order-summary">
+                    <div class="summary-row">
+                        <span>Subtotal:</span>
+                        <span>${order.subtotal.toLocaleString('vi-VN')} VND</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Shipping Fee:</span>
+                        <span>${order.shippingFee.toLocaleString('vi-VN')} VND</span>
+                    </div>
+                    ${order.discount > 0 ? `
+                    <div class="summary-row discount">
+                        <span>Discount:</span>
+                        <span>-${order.discount.toLocaleString('vi-VN')} VND</span>
+                    </div>
+                    ` : ''}
+                    <div class="summary-row total">
+                        <span>Total:</span>
+                        <span>${order.totalAmount.toLocaleString('vi-VN')} VND</span>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('orderDetailBody').innerHTML = html;
+        }
+    </script>
+}

@@ -1,0 +1,170 @@
+﻿@model EyelixEyewear_Project.Models.Order
+@{
+    ViewBag.Title = "Order Confirmation";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .confirmation-page {
+        max-width: 800px;
+        margin: 80px auto;
+        padding: 40px;
+        text-align: center;
+    }
+
+    .success-icon {
+        font-size: 80px;
+        color: #4caf50;
+        margin-bottom: 20px;
+    }
+
+    .confirmation-title {
+        font-size: 32px;
+        font-weight: 700;
+        color: #000;
+        margin-bottom: 10px;
+    }
+
+    .confirmation-subtitle {
+        font-size: 16px;
+        color: #777;
+        margin-bottom: 40px;
+    }
+
+    .order-info-box {
+        background: #f9f9f9;
+        border: 1px solid #e5e5e5;
+        border-radius: 10px;
+        padding: 30px;
+        margin-bottom: 30px;
+        text-align: left;
+    }
+
+    .order-info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #eee;
+    }
+
+        .order-info-row:last-child {
+            border-bottom: none;
+        }
+
+    .order-info-label {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .order-info-value {
+        color: #666;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+
+    .btn-primary-custom, .btn-secondary-custom {
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-block;
+    }
+
+    .btn-primary-custom {
+        background: #000;
+        color: white;
+        border: 2px solid #000;
+    }
+
+        .btn-primary-custom:hover {
+            background: #333;
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-secondary-custom {
+        background: white;
+        color: #000;
+        border: 2px solid #000;
+    }
+
+        .btn-secondary-custom:hover {
+            background: #f5f5f5;
+            text-decoration: none;
+        }
+</style>
+
+<div class="confirmation-page">
+    @if (Model != null)
+    {
+        <!-- Success Icon -->
+        <div class="success-icon">✓</div>
+
+        <!-- Title -->
+        <h1 class="confirmation-title">Thank you for your order!</h1>
+        <p class="confirmation-subtitle">
+            Your order has been successfully placed. We'll send you a confirmation email shortly.
+        </p>
+
+        <!-- Order Information -->
+        <div class="order-info-box">
+            <div class="order-info-row">
+                <span class="order-info-label">Order Number:</span>
+                <span class="order-info-value">@Model.OrderNumber</span>
+            </div>
+            <div class="order-info-row">
+                <span class="order-info-label">Order Date:</span>
+                <span class="order-info-value">@Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</span>
+            </div>
+            <div class="order-info-row">
+                <span class="order-info-label">Total Amount:</span>
+                <span class="order-info-value">@Model.TotalAmount.ToString("N0") VND</span>
+            </div>
+            <div class="order-info-row">
+                <span class="order-info-label">Payment Method:</span>
+                <span class="order-info-value">@Model.PaymentMethod</span>
+            </div>
+            <div class="order-info-row">
+                <span class="order-info-label">Shipping Address:</span>
+                <span class="order-info-value">
+                    @Model.ShippingAddress, @Model.ShippingWard, @Model.ShippingCity
+                </span>
+            </div>
+            <div class="order-info-row">
+                <span class="order-info-label">Status:</span>
+                <span class="order-info-value" style="color: #ff9800; font-weight: 600;">
+                    @Model.Status
+                </span>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="btn-group">
+            <a href="@Url.Action("Index", "Home")" class="btn-primary-custom">
+                Continue Shopping
+            </a>
+            <a href="@Url.Action("Index", "Product")" class="btn-secondary-custom">
+                Browse Products
+            </a>
+        </div>
+    }
+    else
+    {
+        <!-- Order Not Found -->
+        <div class="success-icon" style="color: #e53935;">✗</div>
+        <h1 class="confirmation-title">Order Not Found</h1>
+        <p class="confirmation-subtitle">
+            We couldn't find your order. Please contact support if you believe this is an error.
+        </p>
+        <a href="@Url.Action("Index", "Home")" class="btn-primary-custom">
+            Back to Home
+        </a>
+    }
+</div>

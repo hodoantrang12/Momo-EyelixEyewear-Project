@@ -1,0 +1,167 @@
+﻿@model List<EyelixEyewear_Project.Models.ViewModels.AdminOrderViewModel>
+@{
+    ViewBag.Title = "Orders Management";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<header>
+    <h2>Orders Management</h2>
+    <div class="search-wrapper">
+        <i class="fas fa-search"></i>
+        <input type="search" id="searchOrder" placeholder="Search Order ID or Customer..." onkeyup="filterOrders()">
+    </div>
+</header>
+
+<div class="card">
+    <div class="card-header">
+        <div class="filters">
+            <select id="filterStatus" onchange="filterOrders()">
+                <option value="All">All Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Processing">Processing</option>
+                <option value="Completed">Completed</option>
+            </select>
+        </div>
+    </div>
+    <div class="card-body">
+        <table>
+            <thead>
+                <tr>
+                    <td>ID</td>
+                    <td>Customer</td>
+                    <td>Date</td>
+                    <td>Status</td>
+                    <td>Total</td>
+                    <td>Actions</td>
+                </tr>
+            </thead>
+            <tbody id="orderTableBody">
+                @foreach (var order in Model)
+                {
+                    <tr data-order-id="@order.Id" data-status="@order.Status">
+                        <td>#@order.OrderNumber</td>
+                        <td>@order.CustomerName</td>
+                        <td>@order.OrderDate.ToString("dd/MM/yyyy")</td>
+                        <td><span class="status @order.Status.ToLower()">@order.Status</span></td>
+                        <td>@order.TotalAmount.ToString("N0") VND</td>
+                        <td class="actions">
+                            <i class="fas fa-eye view" onclick="viewOrder(@order.Id)"></i>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Order Detail -->
+<div class="modal" id="orderModal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal('orderModal')">&times;</span>
+        <div class="modal-header"><h2>Order Details <span id="ordId"></span></h2></div>
+
+        <div class="order-info">
+            <div>Customer: <strong id="ordCustomer"></strong></div>
+            <div>Date: <strong id="ordDate"></strong></div>
+            <div>Address: <strong id="ordAddress"></strong></div>
+            <div>Payment: <strong id="ordPayment"></strong></div>
+        </div>
+
+        <table class="mini-table" style="width: 100%; border: 1px solid #eee; margin-bottom: 20px;">
+            <thead style="background: #f8fafc;">
+                <tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+            </thead>
+            <tbody id="ordItems"></tbody>
+        </table>
+
+        <div class="order-total">Total: <span id="ordTotal"></span></div>
+
+        <div class="form-group" style="margin-top: 20px;">
+            <label>Change Status:</label>
+            <div style="display: flex; gap: 10px;">
+                <select id="ordStatusSelect">
+                    <option value="Pending">Pending</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+                <button class="btn-main" onclick="updateOrderStatus()">Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentOrderId = null;
+
+        // View order detail
+        function viewOrder(id) {
+            currentOrderId = id;
+
+            fetch(`/Admin/OrderDetail?id=${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('ordId').innerText = '#' + data.orderNumber;
+                    document.getElementById('ordCustomer').innerText = data.customer;
+                    document.getElementById('ordDate').innerText = data.date;
+                    document.getElementById('ordAddress').innerText = data.address;
+                    document.getElementById('ordPayment').innerText = data.payment;
+                    document.getElementById('ordStatusSelect').value = data.status;
+                    document.getElementById('ordTotal').innerText = data.total.toLocaleString('vi-VN') + ' VND';
+
+                    const itemsTbody = document.getElementById('ordItems');
+                    itemsTbody.innerHTML = '';
+                    data.items.forEach(i => {
+                        itemsTbody.innerHTML += `<tr>
+                            <td>${i.name}</td>
+                            <td>${i.qty}</td>
+                            <td>${i.price.toLocaleString('vi-VN')} VND</td>
+                            <td>${i.total.toLocaleString('vi-VN')} VND</td>
+                        </tr>`;
+                    });
+
+                    openModal('orderModal');
+                });
+        }
+
+        // Update order status
+        function updateOrderStatus() {
+            const newStatus = document.getElementById('ordStatusSelect').value;
+
+            fetch('/Admin/UpdateOrderStatus', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `id=${currentOrderId}&status=${newStatus}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Order status updated!');
+                    location.reload();
+                }
+            });
+        }
+
+        // Filter orders
+        function filterOrders() {
+            const searchTerm = document.getElementById('searchOrder').value.toLowerCase();
+            const filterStatus = document.getElementById('filterStatus').value;
+            const rows = document.querySelectorAll('#orderTableBody tr');
+
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                const status = row.getAttribute('data-status');
+
+                const matchSearch = text.includes(searchTerm);
+                const matchStatus = filterStatus === 'All' || status === filterStatus;
+
+                row.style.display = (matchSearch && matchStatus) ? '' : 'none';
+            });
+        }
+
+        // Modal functions
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+    </script>
+}

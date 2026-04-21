@@ -1,0 +1,417 @@
+﻿/* ==========================================
+   CART PAGE STYLING - Modern E-commerce Design
+   ========================================== */
+
+:root {
+    --primary-dark: #333;
+    --border-color: #e5e5e5;
+    --text-muted: #777;
+    --success-color: #4caf50;
+    --danger-color: #E53935;
+}
+
+.cart-page {
+    padding: 60px 0;
+    background: #fff;
+    min-height: 70vh;
+}
+
+.cart-layout {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 40px;
+}
+
+.cart-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #000;
+    margin-bottom: 25px;
+    text-transform: none;
+    letter-spacing: 0.5px;
+}
+
+/* ==========================================
+   GREEN ALERT BANNER
+   ========================================== */
+.cart-alert {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    background-color: #ffffff;
+    border: 1px solid var(--success-color);
+    color: var(--success-color);
+    font-size: 15px;
+    margin-bottom: 30px;
+    border-radius: 6px;
+}
+
+    .cart-alert .star-icon {
+        margin-right: 12px;
+        font-size: 22px;
+    }
+
+/* ==========================================
+   GRID LAYOUT: 2 COLUMNS
+   ========================================== */
+.cart-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 40px;
+    align-items: start;
+}
+
+@media(max-width: 980px) {
+    .cart-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==========================================
+   LEFT SIDE: CART ITEMS TABLE
+   ========================================== */
+.cart-items-section {
+    background: #fff;
+}
+
+.cart-table-header {
+    display: grid;
+    grid-template-columns: 3fr 1fr 1fr 0.5fr;
+    align-items: center;
+    gap: 15px;
+    padding: 20px 0;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 700;
+    font-size: 14px;
+    color: #000;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+    .cart-table-header span:nth-child(2) {
+        text-align: center;
+    }
+
+    .cart-table-header span:nth-child(3) {
+        text-align: right;
+    }
+
+/* ==========================================
+   CART ITEM ROW
+   ========================================== */
+.cart-item {
+    display: grid;
+    grid-template-columns: 3fr 1fr 1fr 0.5fr;
+    align-items: center;
+    gap: 15px;
+    padding: 25px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.cart-item-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.cart-thumb {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    flex-shrink: 0;
+}
+
+.cart-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+    .cart-info .name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #000;
+        line-height: 1.4;
+    }
+
+    .cart-info .price {
+        font-size: 14px;
+        color: var(--text-muted);
+    }
+
+/* ==========================================
+   QUANTITY BOX
+   ========================================== */
+.quantity-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    overflow: hidden;
+    width: 110px;
+    margin: 0 auto;
+    background: white;
+}
+
+.qty-btn {
+    padding: 8px 16px;
+    background: #f5f5f5;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.2s;
+    color: #333;
+}
+
+    .qty-btn:hover {
+        background: #e0e0e0;
+    }
+
+    .qty-btn:active {
+        background: #d0d0d0;
+    }
+
+.qty-input {
+    width: 45px;
+    text-align: center;
+    border: none;
+    background: white;
+    font-size: 15px;
+    font-weight: 500;
+    color: #000;
+}
+
+/* ==========================================
+   SUBTOTAL & REMOVE
+   ========================================== */
+.cart-subtotal {
+    text-align: right;
+    font-size: 16px;
+    font-weight: 600;
+    color: #000;
+}
+
+.cart-remove {
+    display: flex;
+    justify-content: center;
+}
+
+.remove-item {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    font-size: 28px;
+    padding: 5px 10px;
+    transition: all 0.2s;
+    line-height: 1;
+    font-weight: 300;
+}
+
+    .remove-item:hover {
+        color: var(--danger-color);
+        transform: scale(1.2);
+    }
+
+/* ==========================================
+   COUPON & UPDATE BUTTONS
+   ========================================== */
+.btn-apply-coupon,
+.btn-update-cart {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: capitalize;
+}
+
+.btn-apply-coupon {
+    background-color: #dc3545;
+    color: white;
+}
+
+    .btn-apply-coupon:hover {
+        background-color: #c82333;
+        transform: translateY(-2px);
+    }
+
+.btn-update-cart {
+    background-color: #ffc1c1;
+    color: #333;
+}
+
+    .btn-update-cart:hover {
+        background-color: #ffb0b0;
+        transform: translateY(-2px);
+    }
+
+/* ==========================================
+   RIGHT SIDE: CART SUMMARY
+   ========================================== */
+.cart-summary {
+    background: #fafafa;
+    padding: 25px 30px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    position: sticky;
+    top: 20px;
+}
+
+    .cart-summary h2 {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        text-transform: none;
+        color: #000;
+        letter-spacing: 0.5px;
+        margin-top: 0;
+    }
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    font-size: 15px;
+    color: #333;
+}
+
+    .summary-row span:last-child {
+        font-weight: 500;
+    }
+
+/* ==========================================
+   SHIPPING OPTIONS
+   ========================================== */
+.shipping-methods {
+    padding: 10px 0;
+    margin-bottom: 15px;
+}
+
+    .shipping-methods label {
+        display: flex;
+        align-items: center;
+        padding: 8px 0;
+        font-size: 14px;
+        color: #333;
+        cursor: pointer;
+    }
+
+    .shipping-methods input[type="radio"] {
+        margin-right: 10px;
+        cursor: pointer;
+    }
+
+.change-address {
+    display: inline-block;
+    font-size: 14px;
+    color: var(--danger-color);
+    margin-top: 8px;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+    .change-address:hover {
+        color: #b71c1c;
+        text-decoration: underline;
+    }
+
+/* ==========================================
+   TOTAL ROW
+   ========================================== */
+.total-row {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 2px solid #ddd;
+    font-weight: 700;
+    font-size: 18px;
+}
+
+    .total-row span:last-child {
+        color: #000;
+    }
+
+.vat-info {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    margin-top: 5px;
+}
+
+/* ==========================================
+   CHECKOUT BUTTON
+   ========================================== */
+.btn-checkout {
+    display: block;
+    width: 100%;
+    padding: 14px 20px;
+    background-color: #000;
+    color: white;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+    .btn-checkout:hover {
+        background-color: #333;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        color: white;
+    }
+
+/* ==========================================
+   RESPONSIVE DESIGN
+   ========================================== */
+@media(max-width: 768px) {
+    .cart-layout {
+        padding: 0 20px;
+    }
+
+    .cart-title {
+        font-size: 24px;
+    }
+
+    .cart-table-header {
+        display: none;
+    }
+
+    .cart-item {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding: 20px;
+        background: #fafafa;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        border: 1px solid #eee;
+    }
+
+    .cart-item-left {
+        grid-column: 1;
+    }
+
+    .quantity-box {
+        width: 100%;
+        max-width: 150px;
+    }
+
+    .cart-subtotal {
+        text-align: left;
+        font-size: 18px;
+    }
+
+    .cart-remove {
+        justify-content: flex-start;
+    }
+}

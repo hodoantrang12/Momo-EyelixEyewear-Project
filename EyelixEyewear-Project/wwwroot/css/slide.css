@@ -1,0 +1,112 @@
+﻿/* --- CSS CHO HEADER & NAVIGATION --- */
+.section-header {
+    position: relative;
+    padding: 20px 0;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center; 
+    align-items: center;
+}
+
+.section-header h2 {
+    margin: 0;
+    text-align: center;
+    width: 100%; 
+}
+
+.slider-nav {
+    position: absolute;
+    right: 0; /* Ghim sang phải */
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10; /* Nổi lên trên để bấm được */
+    padding-left: 15px; /* Tạo khoảng trắng để chữ không dính nút */
+}
+
+.slider-nav button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%; /* Bo tròn */
+    cursor: pointer;
+    display: flex; /* Căn giữa dấu mũi tên */
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.slider-nav button:hover {
+    background: #333;
+    color: white;
+}
+
+/* --- CSS CHO SLIDER VÒNG LẶP --- */
+.product-slider-container {
+    overflow: hidden;
+    width: 100%;
+    position: relative;
+}
+
+.product-track {
+    display: flex;
+    width: 100%;
+    /* Không đặt transition ở đây nữa, sẽ chỉnh bằng JS */
+}
+
+.product-slide-item {
+    flex: 0 0 33.3333%;
+    max-width: 35%;
+    padding: 0 10px;
+    box-sizing: border-box;
+}
+
+/* Ảnh sản phẩm */
+.product-slide-item .product-image img {
+    width: 100%;
+    height: 400px;
+    object-fit: contain;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .product-slide-item {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    .section-header {
+        flex-direction: column;
+    }
+    .slider-nav {
+        position: relative;
+        right: auto;
+        top: auto;
+        transform: none;
+        margin-top: 10px;
+    }
+}
+/* --- HIỆU ỨNG TRỒI LÊN CHO SẢN PHẨM MỚI --- */
+@keyframes smoothFadeUp {
+    0% {
+        opacity: 0.4;
+        transform: translateY(40px); /* Bắt đầu ở dưới thấp */
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0); /* Về vị trí chuẩn */
+    }
+}
+
+/* Class này sẽ được JS bắn vào sản phẩm mới */
+.animate-enter {
+    animation: smoothFadeUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* Ẩn nút Prev đi (hoặc bạn xóa trong HTML cũng được) */
+.prev-btn {
+    display: none !important;
+}
+
+/* Chỉnh lại nút Next cho đẹp (nằm giữa theo chiều dọc, bên phải) */
+.slider-nav {
+    display: block; /* Ghi đè flex cũ */
+}

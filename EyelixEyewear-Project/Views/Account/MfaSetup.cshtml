@@ -1,0 +1,134 @@
+﻿@model EyelixEyewear_Project.Models.ViewModels.MfaSetupViewModel
+@{
+    ViewData["Title"] = "Cài đặt xác thực 2 bước";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .mfa-setup-page { max-width: 600px; margin: 80px auto; padding: 0 20px; }
+        .mfa-setup-page h1 { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+        .step-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 25px; margin-bottom: 20px; }
+        .step-num { width: 32px; height: 32px; background: #000; color: #fff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; margin-right: 10px; }
+        .step-title { font-size: 16px; font-weight: 600; display: inline; }
+        .qr-container { text-align: center; margin: 20px 0; }
+        .qr-container img { border: 8px solid white; box-shadow: 0 2px 15px rgba(0,0,0,0.1); border-radius: 8px; }
+        .secret-key-box { background: #f9f9f9; border: 1px dashed #ddd; border-radius: 8px; padding: 12px; text-align: center; font-family: 'Courier New', monospace; font-size: 16px; font-weight: 700; letter-spacing: 3px; color: #333; cursor: pointer; margin: 15px 0; }
+        .secret-key-box:hover { background: #f0f0f0; }
+        .otp-input-group { display: flex; gap: 8px; justify-content: center; margin: 15px 0; }
+        .otp-single { width: 48px; height: 56px; text-align: center; font-size: 22px; font-weight: 700; border: 2px solid #ddd; border-radius: 10px; transition: border-color 0.2s; }
+        .otp-single:focus { border-color: #000; outline: none; }
+        .btn-enable-mfa { width: 100%; padding: 14px; background: #000; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .btn-enable-mfa:hover { background: #333; }
+        .app-badges { display: flex; gap: 10px; justify-content: center; margin: 10px 0; flex-wrap: wrap; }
+        .app-badge { background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 500; }
+    </style>
+}
+
+<div class="mfa-setup-page">
+    <h1>Bật xác thực 2 bước</h1>
+    <p style="color: #000; margin-bottom: 30px;">Bảo vệ tài khoản bằng Google Authenticator. Mỗi lần đăng nhập, bạn sẽ cần nhập mã 6 số từ điện thoại.</p>
+
+    <!-- Step 1: Tải app -->
+    <div class="step-card">
+        <div style="margin-bottom: 15px;">
+            <span class="step-num">1</span>
+            <span class="step-title">Tải ứng dụng Authenticator</span>
+        </div>
+        <p style="color: #000; font-size: 14px; margin-bottom: 15px;">Tải một trong các ứng dụng sau về điện thoại:</p>
+        <div class="app-badges">
+            <span class="app-badge">Google Authenticator</span>
+            <span class="app-badge">Authy</span>
+            <span class="app-badge">Microsoft Authenticator</span>
+        </div>
+    </div>
+
+    <!-- Step 2: Quét QR -->
+    <div class="step-card">
+        <div style="margin-bottom: 15px;">
+            <span class="step-num">2</span>
+            <span class="step-title">Quét mã QR bằng ứng dụng</span>
+        </div>
+
+        <div class="qr-container">
+            <img src="data:image/png;base64,@Model.QrCodeBase64"
+                 alt="QR Code MFA" width="200" height="200">
+        </div>
+
+        <p style="text-align: center; font-size: 13px; color: #000; margin-bottom: 5px;">Hoặc nhập thủ công mã bí mật:</p>
+        <div class="secret-key-box" onclick="copySecret()" title="Click để copy">
+            @Model.SecretKey
+        </div>
+        <p style="text-align: center; font-size: 12px; color: #000;">Click để copy · Đừng chia sẻ mã này với ai</p>
+    </div>
+
+    <!-- Step 3: Xác nhận OTP -->
+    <div class="step-card">
+        <div style="margin-bottom: 15px;">
+            <span class="step-num">3</span>
+            <span class="step-title">Xác nhận bằng mã OTP</span>
+        </div>
+        <p style="font-size: 14px; color: #000; margin-bottom: 15px;">Nhập mã 6 số hiện tại từ ứng dụng để hoàn tất:</p>
+
+        <form asp-action="MfaSetup" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="SecretKey" value="@Model.SecretKey">
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div style="color: #e53935; background: #fff5f5; border: 1px solid #ffcdd2; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 15px;">
+                    @Html.ValidationSummary(false)
+                </div>
+            }
+
+            <div class="otp-input-group" id="otpGroup">
+                @for (int i = 0; i < 6; i++)
+                {
+                    <input type="text" maxlength="1" class="otp-single"
+                           inputmode="numeric" pattern="[0-9]" id="otp_@i">
+                }
+            </div>
+            <input type="hidden" asp-for="OtpCode" id="OtpCode">
+
+            <button type="submit" class="btn-enable-mfa">
+                Bật xác thực 2 bước
+            </button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // OTP boxes logic (giống trang MfaVerify)
+        const boxes = document.querySelectorAll('.otp-single');
+        const hiddenInput = document.getElementById('OtpCode');
+
+        boxes.forEach((box, idx) => {
+            box.addEventListener('input', (e) => {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                if (e.target.value && idx < 5) boxes[idx + 1].focus();
+                syncHidden();
+            });
+            box.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value && idx > 0) boxes[idx - 1].focus();
+            });
+            box.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const p = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+                p.split('').forEach((c, i) => { if (boxes[i]) boxes[i].value = c; });
+                syncHidden();
+            });
+        });
+
+        function syncHidden() {
+            hiddenInput.value = Array.from(boxes).map(b => b.value).join('');
+        }
+
+        function copySecret() {
+            navigator.clipboard.writeText('@Model.SecretKey');
+            alert('Đã copy mã bí mật!');
+        }
+
+        boxes[0].focus();
+    </script>
+}

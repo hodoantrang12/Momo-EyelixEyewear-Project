@@ -1,0 +1,67 @@
+﻿@* Views/Home/Contact.cshtml *@
+
+@{
+    ViewData["Title"] = "Contact Us";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/contactus.css" />
+}
+
+<!-- CONTACT FORM SECTION -->
+<section class="contact-section">
+    <div class="contact-container">
+        <!-- Image container -->
+        <div class="image-container">
+            <img src="~/images/banner/contact-us.avif" alt="Eyewear Display">
+        </div>
+
+        <!-- Form container -->
+        <div class="form-container">
+            <h1>Contact Us</h1>
+
+            @if (TempData["Message"] != null)
+            {
+                <div class="alert alert-success" role="alert">
+                    @TempData["Message"]
+                </div>
+            }
+
+            <form asp-controller="Home" asp-action="Contact" method="post">
+                <label for="Name">Name *</label>
+                <input type="text" id="Name" name="Name" required>
+
+                <label for="Phone">Phone *</label>
+                <input type="text" id="Phone" name="Phone" required>
+
+                <label for="Email">Email Address *</label>
+                <input type="email" id="Email" name="Email" required>
+
+                <label for="Message">Your Message *</label>
+                <textarea id="Message" name="Message" required></textarea>
+
+                <button type="submit" class="send-button">Send Message</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- Embedded Map Section -->
+<section class="map-section">
+    <h2>Find Us Here</h2>
+    <div class="map-container">
+        <!-- Embed Google Map iframe -->
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.6602635745217!2d106.66505067480476!3d10.760644989387226!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752ee4fdd56b85%3A0x23feeb2d2e8e7317!2zMjc5IE5ndXnhu4VuIFRyaSBQaMawxqFuZywgUGjGsOG7nW5nIDgsIFF14bqtbiAxMCwgVGjDoG5oIHBo4buRIEjhu5MgQ2jDrSBNaW5oIDcyNTU5LCBWaeG7h3QgTmFt!5e0!3m2!1svi!2s!4v1764746436402!5m2!1svi!2s"
+                width="1000"
+                height="450"
+                style="border:0;"
+                allowfullscreen=""
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="~/js/contactus.js"></script>
+}

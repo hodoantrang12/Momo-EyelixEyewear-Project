@@ -1,0 +1,55 @@
+﻿@model IEnumerable<EyelixEyewear_Project.Models.Order>
+
+<div class="container" style="padding: 50px 0;">
+    <h2 style="margin-bottom: 30px;">My Orders</h2>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Order #</th>
+                    <th>Date</th>
+                    <th>Receiver</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Payment</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><strong>@item.OrderNumber</strong></td>
+                        <td>@item.OrderDate.ToString("dd/MM/yyyy")</td>
+                        <td>@item.ShippingName</td>
+                        <td>@item.TotalAmount.ToString("n0") VND</td>
+                        <td>
+                            @{
+                                string badgeClass = "bg-secondary";
+                                if (item.Status == "Pending") badgeClass = "bg-warning text-dark";
+                                else if (item.Status == "Processing") badgeClass = "bg-info text-dark";
+                                else if (item.Status == "Shipped") badgeClass = "bg-primary";
+                                else if (item.Status == "Delivered") badgeClass = "bg-success";
+                                else if (item.Status == "Cancelled") badgeClass = "bg-danger";
+                            }
+                            <span class="badge @badgeClass">@item.Status</span>
+                        </td>
+                        <td>@item.PaymentStatus</td>
+                        <td>
+                            <a asp-controller="Order" asp-action="OrderDetail" asp-route-id="@item.Id" class="btn btn-sm btn-outline-dark">Detail</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center" style="margin-top: 50px;">
+            <p>You haven't placed any orders yet.</p>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Go shopping now</a>
+        </div>
+    }
+</div>

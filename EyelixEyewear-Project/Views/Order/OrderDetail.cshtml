@@ -1,0 +1,94 @@
+﻿@model EyelixEyewear_Project.Models.Order
+
+<div class="container" style="padding: 50px 0;">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="MyOrders">My Orders</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Order #@Model.OrderNumber</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Order Details</h3>
+        <span class="badge bg-primary" style="font-size: 1rem;">@Model.Status</span>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Shipping Info</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Receiver:</strong> @Model.ShippingName</p>
+                    <p class="mb-1"><strong>Phone:</strong> @Model.ShippingPhone</p>
+                    <p class="mb-1"><strong>Address:</strong></p>
+                    <p class="text-muted">
+                        @Model.ShippingAddress<br>
+                        @Model.ShippingWard, @Model.ShippingDistrict<br>
+                        @Model.ShippingCity
+                    </p>
+                    <hr>
+                    <p class="mb-1"><strong>Note:</strong> @(string.IsNullOrEmpty(Model.Note) ? "None" : Model.Note)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Items</h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 50%">Product</th>
+                                <th class="text-end">Price</th>
+                                <th class="text-center">Qty</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var detail in Model.OrderDetails)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="@(string.IsNullOrEmpty(detail.Product.ImageUrl) ? "/images/default.png" : detail.Product.ImageUrl)"
+                                                 alt="@detail.Product.Name"
+                                                 style="width: 50px; height: 50px; object-fit: cover; margin-right: 15px; border-radius: 4px;">
+                                            <div>
+                                                <h6 class="mb-0">@detail.Product.Name</h6>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-end">@detail.Price.ToString("n0")</td>
+                                    <td class="text-center">x @detail.Quantity</td>
+                                    <td class="text-end">@((detail.Price * detail.Quantity).ToString("n0"))</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="bg-light">
+                            <tr>
+                                <td colspan="3" class="text-end">Shipping Fee:</td>
+                                <td class="text-end">@Model.ShippingFee.ToString("n0")</td>
+                            </tr>
+                            @if (Model.Discount > 0)
+                            {
+                                <tr>
+                                    <td colspan="3" class="text-end text-success">Discount:</td>
+                                    <td class="text-end text-success">-@Model.Discount.ToString("n0")</td>
+                                </tr>
+                            }
+                            <tr>
+                                <td colspan="3" class="text-end"><strong>Grand Total:</strong></td>
+                                <td class="text-end"><strong class="text-danger fs-5">@Model.TotalAmount.ToString("n0") VND</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

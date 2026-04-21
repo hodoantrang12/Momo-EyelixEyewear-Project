@@ -1,0 +1,234 @@
+﻿@model List<EyelixEyewear_Project.Models.ViewModels.AdminCustomerViewModel>
+@{
+    ViewData["Title"] = "Customer Management";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<header>
+    <h2>Customer Management</h2>
+    <div class="search-wrapper">
+        <i class="fas fa-search"></i>
+        <input type="search" id="searchInput" placeholder="Search customer..." onkeyup="searchCustomers()">
+    </div>
+</header>
+
+<div class="card">
+    <div class="card-header">
+        <h3>All Customers (@Model.Count)</h3>
+        <div class="filters">
+            <select id="sortFilter" onchange="sortCustomers()">
+                <option value="name">Sort by Name</option>
+                <option value="orders">Sort by Orders</option>
+                <option value="spent">Sort by Total Spent</option>
+            </select>
+        </div>
+    </div>
+    <div class="card-body">
+        <table id="customersTable">
+            <thead>
+                <tr>
+                    <td>Name</td>
+                    <td>Email</td>
+                    <td>Location</td>
+                    <td>Orders</td>
+                    <td>Total Spent</td>
+                    <td>Status</td>
+                    <td>Actions</td>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Any())
+                {
+                    foreach (var customer in Model)
+                    {
+                        <tr data-id="@customer.Id">
+                            <td>
+                                <strong>@customer.Name</strong>
+                            </td>
+                            <td>@customer.Email</td>
+                            <td>@customer.Location</td>
+                            <td><span class="badge-info">@customer.TotalOrders</span></td>
+                            <td><strong>@customer.TotalSpent.ToString("#,##0") VND</strong></td>
+                            <td>
+                                <span class="status completed">Active</span>
+                            </td>
+                            <td class="actions">
+                                <i class="fas fa-eye view" onclick="viewCustomer(@customer.Id)" title="View Details"></i>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: #94a3b8; padding: 30px;">
+                            No customers found
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Customer Detail Modal -->
+<div class="modal" id="customerModal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <div class="modal-header">
+            <h2>Customer Profile</h2>
+        </div>
+
+        <div class="order-info">
+            <div>Name: <strong id="custName"></strong></div>
+            <div>Email: <strong id="custEmail"></strong></div>
+            <div>Phone: <strong id="custPhone"></strong></div>
+            <div>Address: <strong id="custAddress"></strong></div>
+            <div>Total Orders: <strong id="custOrders" style="color: #3b82f6;"></strong></div>
+            <div>Total Spent: <strong id="custSpent" style="color: #10b981;"></strong></div>
+        </div>
+
+        <h3 style="margin: 20px 0 10px; font-size: 16px;">Order History</h3>
+        <table class="mini-table" style="width: 100%; margin-bottom: 20px;">
+            <thead style="background: #f8fafc;">
+                <tr>
+                    <th style="padding: 8px;">Order #</th>
+                    <th style="padding: 8px;">Date</th>
+                    <th style="padding: 8px;">Status</th>
+                    <th style="padding: 8px;">Total</th>
+                </tr>
+            </thead>
+            <tbody id="custHistory">
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 20px; color: #94a3b8;">Loading...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Search customers
+        function searchCustomers() {
+            const input = $('#searchInput').val().toLowerCase();
+            $('#customersTable tbody tr').each(function() {
+                const text = $(this).text().toLowerCase();
+                $(this).toggle(text.indexOf(input) > -1);
+            });
+        }
+
+        // Sort customers
+        function sortCustomers() {
+            const sortBy = $('#sortFilter').val();
+            const tbody = $('#customersTable tbody');
+            const rows = tbody.find('tr').get();
+
+            rows.sort(function(a, b) {
+                if (sortBy === 'orders') {
+                    const aVal = parseInt($(a).find('td:eq(3)').text());
+                    const bVal = parseInt($(b).find('td:eq(3)').text());
+                    return bVal - aVal;
+                } else if (sortBy === 'spent') {
+                    const aVal = parseInt($(a).find('td:eq(4)').text().replace(/[^0-9]/g, ''));
+                    const bVal = parseInt($(b).find('td:eq(4)').text().replace(/[^0-9]/g, ''));
+                    return bVal - aVal;
+                } else {
+                    const aName = $(a).find('td:eq(0)').text();
+                    const bName = $(b).find('td:eq(0)').text();
+                    return aName.localeCompare(bName);
+                }
+            });
+
+            $.each(rows, function(index, row) {
+                tbody.append(row);
+            });
+        }
+
+        // View customer detail
+        function viewCustomer(id) {
+            $.get('/Admin/GetCustomerDetail?id=' + id, function(data) {
+                if (data.success) {
+                    const c = data.customer;
+
+                    $('#custName').text(c.name);
+                    $('#custEmail').text(c.email);
+                    $('#custPhone').text(c.phone || 'N/A');
+                    $('#custAddress').text(c.address || 'N/A');
+                    $('#custOrders').text(c.totalOrders);
+                    $('#custSpent').text(c.totalSpent.toLocaleString('vi-VN') + ' VND');
+
+                    // Load order history
+                    let historyHtml = '';
+                    if (c.orders.length > 0) {
+                        c.orders.forEach(o => {
+                            const statusClass = o.status.toLowerCase() === 'completed' ? 'completed' :
+                                              o.status.toLowerCase() === 'pending' ? 'pending' : 'processing';
+                            historyHtml += `<tr>
+                                <td style="padding: 8px;">#${o.orderNumber}</td>
+                                <td style="padding: 8px;">${new Date(o.orderDate).toLocaleDateString('vi-VN')}</td>
+                                <td style="padding: 8px;"><span class="status ${statusClass}">${o.status}</span></td>
+                                <td style="padding: 8px;"><strong>${o.totalAmount.toLocaleString('vi-VN')} VND</strong></td>
+                            </tr>`;
+                        });
+                    } else {
+                        historyHtml = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #94a3b8;">No orders</td></tr>';
+                    }
+                    $('#custHistory').html(historyHtml);
+
+                    // Show modal
+                    $('#customerModal').addClass('active');
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            });
+        }
+
+        // Block customer
+        function blockCustomer(id) {
+            Swal.fire({
+                title: 'Block Customer?',
+                text: 'This customer will not be able to place orders',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, block it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post('/Admin/ToggleCustomerStatus', { id: id }, function(response) {
+                        if (response.success) {
+                            Swal.fire('Blocked!', response.message, 'success');
+                            location.reload();
+                        } else {
+                            Swal.fire('Error', response.message, 'error');
+                        }
+                    });
+                }
+            });
+        }
+
+        // Close modal
+        function closeModal() {
+            $('#customerModal').removeClass('active');
+        }
+
+        // Close modal when clicking outside
+        $(document).on('click', '.modal', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
+}
+
+<style>
+    .badge-info {
+        background: #dbeafe;
+        color: #1e40af;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+</style>

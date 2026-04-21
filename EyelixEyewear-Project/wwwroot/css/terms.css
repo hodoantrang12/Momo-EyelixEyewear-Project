@@ -1,0 +1,181 @@
+﻿/* Terms & Conditions Page */
+
+.terms-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 60px 20px 80px;
+}
+
+.terms-header {
+    text-align: center;
+    margin-bottom: 60px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+    .terms-header h1 {
+        font-size: 42px;
+        font-weight: 700;
+        color: #000;
+        margin: 0;
+        letter-spacing: -0.5px;
+    }
+
+.terms-content {
+    background: white;
+    padding: 50px;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Sections */
+.terms-section {
+    margin-bottom: 45px;
+    padding-bottom: 35px;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+    .terms-section:last-of-type {
+        border-bottom: none;
+        margin-bottom: 40px;
+    }
+
+    .terms-section h2 {
+        font-size: 24px;
+        font-weight: 700;
+        color: #F08438;
+        margin-bottom: 20px;
+        letter-spacing: -0.3px;
+    }
+
+    .terms-section p {
+        font-size: 15px;
+        line-height: 1.8;
+        color: #444;
+        margin-bottom: 15px;
+    }
+
+        .terms-section p:last-child {
+            margin-bottom: 0;
+        }
+
+    .terms-section ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .terms-section li {
+        font-size: 15px;
+        line-height: 1.8;
+        color: #444;
+        margin-bottom: 15px;
+        padding-left: 30px;
+        position: relative;
+    }
+
+        .terms-section li:before {
+            content: "•";
+            position: absolute;
+            left: 12px;
+            color: #F08438;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+    .terms-section strong {
+        color: #000;
+        font-weight: 600;
+    }
+
+/* Contact Section */
+.terms-contact {
+    background: linear-gradient(135deg, #F08438 0%, #f36b0a 100%);
+    padding: 35px;
+    border-radius: 12px;
+    text-align: center;
+    margin-top: 40px;
+}
+
+    .terms-contact h3 {
+        font-size: 22px;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 15px;
+    }
+
+    .terms-contact p {
+        font-size: 15px;
+        line-height: 1.7;
+        color: rgba(255, 255, 255, 0.95);
+        margin: 0;
+    }
+
+    .terms-contact a {
+        color: white;
+        font-weight: 600;
+        text-decoration: underline;
+        transition: opacity 0.2s;
+    }
+
+        .terms-contact a:hover {
+            opacity: 0.8;
+        }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .terms-container {
+        padding: 40px 15px 60px;
+    }
+
+    .terms-header {
+        margin-bottom: 40px;
+        padding-bottom: 20px;
+    }
+
+        .terms-header h1 {
+            font-size: 32px;
+        }
+
+    .terms-content {
+        padding: 30px 20px;
+    }
+
+    .terms-section {
+        margin-bottom: 35px;
+        padding-bottom: 25px;
+    }
+
+        .terms-section h2 {
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .terms-section p,
+        .terms-section li {
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .terms-section li {
+            padding-left: 25px;
+        }
+
+            .terms-section li:before {
+                left: 8px;
+                font-size: 18px;
+            }
+
+    .terms-contact {
+        padding: 25px 20px;
+    }
+
+        .terms-contact h3 {
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        .terms-contact p {
+            font-size: 14px;
+        }
+}
