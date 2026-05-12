@@ -403,6 +403,10 @@ namespace EyelixEyewear_Project.Controllers
                 {
                     return RedirectToAction("CreateMoMoPayment", new { orderId = order.Id });
                 }
+                if (model.PaymentMethod == "paypal")
+                {
+                    return RedirectToAction("CreatePayPalPayment", new { orderId = order.Id });
+                }
                 return RedirectToAction("OrderConfirmation", new { id = order.Id });
             }
 
@@ -657,6 +661,201 @@ namespace EyelixEyewear_Project.Controllers
             }
 
             return Ok();
+        }
+
+        // ==========================================
+        // PAYPAL BƯỚC 1: TẠO YÊU CẦU THANH TOÁN
+        // ==========================================
+        [HttpGet]
+        public async Task<IActionResult> CreatePayPalPayment(int orderId)
+        {
+            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == orderId);
+            if (order == null) return NotFound();
+
+            var paypalConfig = _configuration.GetSection("PayPal");
+            string clientId = paypalConfig["ClientId"]!;
+            string clientSecret = paypalConfig["ClientSecret"]!;
+            string mode = paypalConfig["Mode"]!;
+            string returnUrl = paypalConfig["ReturnUrl"]!;
+            string cancelUrl = paypalConfig["CancelUrl"]!;
+
+            // Lấy Access Token
+            string baseUrl = mode == "live"
+                ? "https://api-m.paypal.com"
+                : "https://api-m.sandbox.paypal.com";
+
+            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+
+            // Lấy token
+            var tokenRequest = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/v1/oauth2/token");
+            var credentials = Convert.ToBase64String(
+                System.Text.Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}"));
+            tokenRequest.Headers.Add("Authorization", $"Basic {credentials}");
+            tokenRequest.Content = new FormUrlEncodedContent(new[]
+            {
+        new KeyValuePair<string, string>("grant_type", "client_credentials")
+    });
+
+            var tokenResponse = await httpClient.SendAsync(tokenRequest);
+            var tokenString = await tokenResponse.Content.ReadAsStringAsync();
+            var tokenData = System.Text.Json.JsonSerializer
+                .Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(tokenString);
+
+            if (tokenData == null || !tokenData.ContainsKey("access_token"))
+            {
+                TempData["ErrorMessage"] = "Không thể kết nối PayPal. Vui lòng thử lại.";
+                return RedirectToAction("Cart");
+            }
+
+            string accessToken = tokenData["access_token"].GetString()!;
+
+            // Quy đổi VND → USD (1 USD = 25,000 VND)
+            decimal totalUSD = Math.Round(order.TotalAmount / 25000, 2);
+
+            // Tạo order PayPal
+            var orderRequest = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/v2/checkout/orders");
+            orderRequest.Headers.Add("Authorization", $"Bearer {accessToken}");
+            orderRequest.Headers.Add("Prefer", "return=representation");
+
+            var orderBody = new
+            {
+                intent = "CAPTURE",
+                purchase_units = new[]
+                {
+            new
+            {
+                reference_id = order.OrderNumber,
+                description = $"Thanh toan don hang #{order.OrderNumber}",
+                amount = new
+                {
+                    currency_code = "USD",
+                    value = totalUSD.ToString("F2")
+                }
+            }
+        },
+                application_context = new
+                {
+                    return_url = returnUrl,
+                    cancel_url = cancelUrl,
+                    brand_name = "Eyelix Eyewear",
+                    landing_page = "LOGIN",
+                    user_action = "PAY_NOW"
+                }
+            };
+
+            orderRequest.Content = new StringContent(
+                System.Text.Json.JsonSerializer.Serialize(orderBody),
+                System.Text.Encoding.UTF8,
+                "application/json");
+
+            try
+            {
+                var orderResponse = await httpClient.SendAsync(orderRequest);
+                var orderString = await orderResponse.Content.ReadAsStringAsync();
+                var orderData = System.Text.Json.JsonSerializer
+                    .Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(orderString);
+
+                if (orderData != null && orderData.TryGetValue("links", out var links))
+                {
+                    foreach (var link in links.EnumerateArray())
+                    {
+                        if (link.GetProperty("rel").GetString() == "approve")
+                        {
+                            // Lưu orderId vào session để dùng lại ở PayPalReturn
+                            HttpContext.Session.SetInt32("PayPalOrderDbId", orderId);
+                            HttpContext.Session.SetString("PayPalAccessToken", accessToken);
+                            HttpContext.Session.SetString("PayPalBaseUrl", baseUrl);
+
+                            return Redirect(link.GetProperty("href").GetString()!);
+                        }
+                    }
+                }
+
+                TempData["ErrorMessage"] = "Không thể tạo yêu cầu PayPal. Vui lòng thử lại.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["ErrorMessage"] = "Kết nối PayPal timeout. Vui lòng thử lại.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Lỗi: {ex.Message}";
+            }
+
+            return RedirectToAction("Cart");
+        }
+
+        // ==========================================
+        // PAYPAL BƯỚC 2: NHẬN KẾT QUẢ SAU THANH TOÁN
+        // ==========================================
+        [HttpGet]
+        public async Task<IActionResult> PayPalReturn(string token)
+        {
+            var pendingOrderId = HttpContext.Session.GetInt32("PayPalOrderDbId");
+            var accessToken = HttpContext.Session.GetString("PayPalAccessToken");
+            var baseUrl = HttpContext.Session.GetString("PayPalBaseUrl");
+
+            if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(accessToken) || !pendingOrderId.HasValue)
+            {
+                TempData["ErrorMessage"] = "Phiên thanh toán không hợp lệ.";
+                return RedirectToAction("Cart");
+            }
+
+            // Capture payment
+            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+            var captureRequest = new HttpRequestMessage(
+                HttpMethod.Post, $"{baseUrl}/v2/checkout/orders/{token}/capture");
+            captureRequest.Headers.Add("Authorization", $"Bearer {accessToken}");
+            captureRequest.Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
+
+            try
+            {
+                var captureResponse = await httpClient.SendAsync(captureRequest);
+                var captureString = await captureResponse.Content.ReadAsStringAsync();
+                var captureData = System.Text.Json.JsonSerializer
+                    .Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(captureString);
+
+                if (captureData != null &&
+                    captureData.TryGetValue("status", out var status) &&
+                    status.GetString() == "COMPLETED")
+                {
+                    // Cập nhật trạng thái đơn hàng
+                    var order = await _context.Orders.FindAsync(pendingOrderId.Value);
+                    if (order != null)
+                    {
+                        order.PaymentStatus = "Paid";
+                        order.Status = "Processing";
+                        _context.Orders.Update(order);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    // Xóa session tạm
+                    HttpContext.Session.Remove("PayPalOrderDbId");
+                    HttpContext.Session.Remove("PayPalAccessToken");
+                    HttpContext.Session.Remove("PayPalBaseUrl");
+
+                    TempData["SuccessMessage"] = "Thanh toán PayPal thành công!";
+                    return RedirectToAction("OrderConfirmation", new { id = pendingOrderId.Value });
+                }
+
+                TempData["ErrorMessage"] = "Thanh toán PayPal thất bại. Vui lòng thử lại.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Lỗi: {ex.Message}";
+            }
+
+            return RedirectToAction("Cart");
+        }
+
+        // ==========================================
+        // PAYPAL BƯỚC 3: USER HUỶ THANH TOÁN
+        // ==========================================
+        [HttpGet]
+        public IActionResult PayPalCancel()
+        {
+            TempData["ErrorMessage"] = "Bạn đã huỷ thanh toán PayPal.";
+            return RedirectToAction("Cart");
         }
     }
 }
