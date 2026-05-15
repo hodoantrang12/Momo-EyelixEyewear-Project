@@ -1,4 +1,5 @@
 ﻿using EyelixEyewear_Project.Data;
+using EyelixEyewear_Project.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
@@ -38,6 +39,7 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
+builder.Services.AddScoped<IVnPayService, VnPayService>();
 
 var app = builder.Build();
 

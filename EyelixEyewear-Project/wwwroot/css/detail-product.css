@@ -110,61 +110,6 @@
     margin-bottom: 30px;
 }
 
-/* Color Variations */
-.color-section {
-    margin-bottom: 30px;
-}
-
-    .color-section label {
-        display: block;
-        font-size: 14px;
-        font-weight: 600;
-        margin-bottom: 15px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-.color-options {
-    display: flex;
-    gap: 12px;
-}
-
-.color-option {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
-}
-
-    .color-option:hover {
-        transform: scale(1.1);
-        border-color: #dbdbdb;
-    }
-
-    .color-option.active {
-        border-color: #333;
-        box-shadow: 0 0 0 2px #fff, 0 0 0 4px #d1d1d1;
-    }
-
-/* Colors */
-.color-black {
-    background-color: #000;
-}
-
-.color-tortoise {
-    background: linear-gradient(135deg, #8B4513 0%, #D2691E 50%, #654321 100%);
-}
-
-.color-gold {
-    background-color: #FFD700;
-}
-
-.color-rose {
-    background-color: #E8C4C4;
-}
-
 /* Quantity & Add to Cart */
 .quantity-cart-section {
     display: flex;
@@ -202,35 +147,6 @@
     font-size: 16px;
     font-weight: 600;
 }
-
-.quantity-cart-section .btn-add-cart,
-.add-to-cart-btn {
-    flex: 1;
-    height: 48px;
-    min-width: 180px; 
-    background: #2c2c2c;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 14px; 
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    white-space: nowrap;
-    padding: 0 20px; 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-    .quantity-cart-section .btn-add-cart:hover,
-    .add-to-cart-btn:hover {
-        background: #f08438;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(240, 132, 56, 0.3);
-    }
 
 
 /* Shipping Information */
@@ -763,10 +679,10 @@
         overflow-x: auto;
     }
 }
+
 /* ==========================================
    BREADCRUMB NAVIGATION - STYLE MỚI
    ========================================== */
-
 .breadcrumb-nav {
     background: #ffffff;
     padding: 15px 0 5px 0;

@@ -24,6 +24,7 @@ namespace EyelixEyewear_Project.Data
         public DbSet<Review> Reviews { get; set; }
         public DbSet<ProductVariant> ProductVariants { get; set; }
         public DbSet<ProductImage> ProductImages { get; set; }
+        public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -106,6 +107,11 @@ namespace EyelixEyewear_Project.Data
                 .WithMany(u => u.Reviews)
                 .HasForeignKey(r => r.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PaymentTransaction>()
+                .HasOne(p => p.Order)
+                .WithMany()
+                .HasForeignKey(p => p.OrderId);
 
             // ==============
             // 3. SEED DATA 

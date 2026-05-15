@@ -1,7 +1,9 @@
-﻿using EyelixEyewear_Project.Data;
+﻿using System.Text.Json;
+using EyelixEyewear_Project.Data;
 using EyelixEyewear_Project.Helpers;
 using EyelixEyewear_Project.Models;
 using EyelixEyewear_Project.Models.ViewModels;
+using EyelixEyewear_Project.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,11 +13,12 @@ namespace EyelixEyewear_Project.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
-
-        public OrderController(ApplicationDbContext context, IConfiguration configuration)
+        private readonly IVnPayService _vnPayService;
+        public OrderController(ApplicationDbContext context, IConfiguration configuration, IVnPayService vnPayService)
         {
             _context = context;
             _configuration = configuration;
+            _vnPayService = vnPayService;
         }
 
         // --- HELPER: Lấy User ID ---
@@ -256,23 +259,86 @@ namespace EyelixEyewear_Project.Controllers
         }
 
         // ==========================================
+        // LẤY SỐ LƯỢNG GIỎ HÀNG (cho badge header)
+        // ==========================================
+        [HttpGet]
+        public IActionResult GetCartCount()
+        {
+            if (!User.Identity.IsAuthenticated)
+                return Json(new { count = 0 });
+
+            int userId = GetCurrentUserId();
+
+            var count = _context.Carts
+                .Where(c => c.UserId == userId)
+                .SelectMany(c => c.CartItems)
+                .Sum(ci => (int?)ci.Quantity) ?? 0;
+
+            return Json(new { count = count });
+        }
+
+        // ============================================================
+        // [MỚI] ACTION 1: CHỌN SẢN PHẨM TỪ GIỎ → CHECKOUT
+        // Nhận danh sách ProductId được tick → lưu Session → redirect Checkout
+        // ============================================================
+        [HttpPost]
+        public IActionResult CheckoutSelected(List<int> selectedIds)
+        {
+            if (!User.Identity.IsAuthenticated)
+                return RedirectToAction("Login", "Account");
+
+            if (selectedIds == null || !selectedIds.Any())
+            {
+                TempData["ErrorMessage"] = "Vui lòng chọn ít nhất một sản phẩm để thanh toán.";
+                return RedirectToAction("Cart");
+            }
+
+            // Lưu danh sách id được chọn vào session, xóa buy now nếu có
+            HttpContext.Session.SetString("CheckoutSelectedIds", JsonSerializer.Serialize(selectedIds));
+            HttpContext.Session.Remove("BuyNowItem");
+
+            return RedirectToAction("Checkout");
+        }
+
+
+        // ============================================================
+        // [MỚI] ACTION 2: MUA NGAY (BUY NOW)
+        // Nhận productId + quantity → lưu Session → redirect Checkout
+        // ============================================================
+        [HttpPost]
+        public IActionResult BuyNow(int productId, int quantity = 1)
+        {
+            if (!User.Identity.IsAuthenticated)
+            {
+                TempData["ErrorMessage"] = "Vui lòng đăng nhập để mua hàng.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            var product = _context.Products.Find(productId);
+            if (product == null) return NotFound();
+
+            // Lưu thông tin Buy Now vào session, xóa selected cart nếu có
+            var buyNowItem = JsonSerializer.Serialize(new { ProductId = productId, Quantity = quantity });
+            HttpContext.Session.SetString("BuyNowItem", buyNowItem);
+            HttpContext.Session.Remove("CheckoutSelectedIds");
+
+            return RedirectToAction("Checkout");
+        }
+
+        // ==========================================
         // 5. TRANG CHECKOUT 
         // ==========================================
+        // ============================================================
+        // [SỬA] ACTION 3: TRANG CHECKOUT (GET)
+        // XÓA action Checkout() cũ và THAY bằng cái này
+        // ============================================================
         [HttpGet]
         public IActionResult Checkout()
         {
+            if (!User.Identity.IsAuthenticated)
+                return RedirectToAction("Login", "Account");
+
             int userId = GetCurrentUserId();
-            var cart = _context.Carts
-                .Include(c => c.CartItems)
-                .ThenInclude(ci => ci.Product)
-                .FirstOrDefault(c => c.UserId == userId);
-
-            // Nếu giỏ trống -> Về trang chủ
-            if (cart == null || !cart.CartItems.Any())
-            {
-                return RedirectToAction("Index", "Home");
-            }
-
             var user = _context.Users.Find(userId);
 
             var model = new CheckoutViewModel
@@ -281,21 +347,76 @@ namespace EyelixEyewear_Project.Controllers
                 Email = user?.Email,
                 Phone = user?.PhoneNumber,
                 Address = user?.Address,
+            };
 
-                // Load items
-                CartItems = cart.CartItems.Select(ci => new CartItemViewModel
+            // --- Ưu tiên 1: Kiểm tra luồng Buy Now ---
+            var buyNowJson = HttpContext.Session.GetString("BuyNowItem");
+            if (!string.IsNullOrEmpty(buyNowJson))
+            {
+                var buyNowData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(buyNowJson);
+                int productId = buyNowData!["ProductId"].GetInt32();
+                int quantity = buyNowData["Quantity"].GetInt32();
+
+                var product = _context.Products.Find(productId);
+                if (product != null)
+                {
+                    model.IsBuyNow = true;
+                    model.CartItems = new List<CartItemViewModel>
+            {
+                new CartItemViewModel
+                {
+                    ProductId    = product.Id,
+                    ProductName  = product.Name,
+                    Price        = product.DiscountPrice ?? product.Price,
+                    Quantity     = quantity,
+                    ProductImage = product.ImageUrl
+                }
+            };
+                }
+            }
+            else
+            {
+                // --- Ưu tiên 2: Đọc selectedIds từ Session (Checkout Selected từ Cart) ---
+                var selectedJson = HttpContext.Session.GetString("CheckoutSelectedIds");
+                List<int>? selectedIds = null;
+                if (!string.IsNullOrEmpty(selectedJson))
+                    selectedIds = JsonSerializer.Deserialize<List<int>>(selectedJson);
+
+                var cart = _context.Carts
+                    .Include(c => c.CartItems)
+                    .ThenInclude(ci => ci.Product)
+                    .FirstOrDefault(c => c.UserId == userId);
+
+                // Nếu giỏ trống → về trang Cart
+                if (cart == null || !cart.CartItems.Any())
+                    return RedirectToAction("Cart");
+
+                // Lọc items: nếu có selectedIds thì lấy đúng items đó, không thì lấy tất cả
+                var itemsToCheckout = selectedIds != null
+                    ? cart.CartItems.Where(ci => selectedIds.Contains(ci.ProductId)).ToList()
+                    : cart.CartItems.ToList();
+
+                if (!itemsToCheckout.Any())
+                {
+                    TempData["ErrorMessage"] = "Không tìm thấy sản phẩm đã chọn trong giỏ hàng.";
+                    return RedirectToAction("Cart");
+                }
+
+                model.SelectedProductIds = itemsToCheckout.Select(ci => ci.ProductId).ToList();
+                model.CartItems = itemsToCheckout.Select(ci => new CartItemViewModel
                 {
                     ProductId = ci.ProductId,
                     ProductName = ci.Product.Name,
                     Price = ci.Product.DiscountPrice ?? ci.Product.Price,
-                    Quantity = ci.Quantity
-                }).ToList()
-            };
+                    Quantity = ci.Quantity,
+                    ProductImage = ci.Product.ImageUrl
+                }).ToList();
+            }
 
             // Tính tiền
             decimal subtotal = model.CartItems.Sum(x => x.Price * x.Quantity);
             model.Subtotal = subtotal;
-            model.Total = subtotal + 1000; // Mặc định + Ship 20k
+            model.Total = subtotal + 1000;
             model.EstimatedDelivery = DateTime.Now.AddDays(3).ToString("dd/MM/yyyy");
 
             return View(model);
@@ -303,12 +424,15 @@ namespace EyelixEyewear_Project.Controllers
 
         // ==========================================
         // 6. XỬ LÝ ĐẶT HÀNG (PLACE ORDER)
-        // ==========================================
+        // =========================================
+        // ============================================================
+        // [SỬA] ACTION 4: XỬ LÝ ĐẶT HÀNG (POST PlaceOrder)
+        // XÓA PlaceOrder() cũ và THAY bằng cái này
+        // ============================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult PlaceOrder(CheckoutViewModel model)
         {
-            // DEBUG: Kiểm tra user có đăng nhập không
             if (!User.Identity.IsAuthenticated)
             {
                 TempData["ErrorMessage"] = "Please login to place order";
@@ -316,160 +440,161 @@ namespace EyelixEyewear_Project.Controllers
             }
 
             int userId = GetCurrentUserId();
-            var cart = _context.Carts.Include(c => c.CartItems).ThenInclude(ci => ci.Product)
-                                     .FirstOrDefault(c => c.UserId == userId);
 
-            if (cart == null || !cart.CartItems.Any())
-            {
-                TempData["ErrorMessage"] = "Your cart is empty";
-                return RedirectToAction("Cart", "Order");
-            }
+            // ─── BƯỚC 1: Xác định items cần đặt ───────────────────────────────────
+            var itemsToOrder = new List<CartItemViewModel>();
+            bool isBuyNow = false;
 
-            // DEBUG: In ra tất cả lỗi validation
-            if (!ModelState.IsValid)
+            var buyNowJson = HttpContext.Session.GetString("BuyNowItem");
+
+            if (!string.IsNullOrEmpty(buyNowJson))
             {
-                // Log lỗi ra Console/Debug
-                foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                // Luồng Buy Now: lấy từ session
+                isBuyNow = true;
+                var buyNowData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(buyNowJson);
+                int productId = buyNowData!["ProductId"].GetInt32();
+                int quantity = buyNowData["Quantity"].GetInt32();
+                var product = _context.Products.Find(productId);
+
+                if (product != null)
                 {
-                    System.Diagnostics.Debug.WriteLine("ModelState Error: " + error.ErrorMessage);
+                    itemsToOrder.Add(new CartItemViewModel
+                    {
+                        ProductId = product.Id,
+                        ProductName = product.Name,
+                        Price = product.DiscountPrice ?? product.Price,
+                        Quantity = quantity
+                    });
+                }
+            }
+            else
+            {
+                // Luồng Cart: lọc theo selectedIds trong session
+                var selectedJson = HttpContext.Session.GetString("CheckoutSelectedIds");
+                List<int>? selectedIds = null;
+                if (!string.IsNullOrEmpty(selectedJson))
+                    selectedIds = JsonSerializer.Deserialize<List<int>>(selectedJson);
+
+                var cart = _context.Carts
+                    .Include(c => c.CartItems)
+                    .ThenInclude(ci => ci.Product)
+                    .FirstOrDefault(c => c.UserId == userId);
+
+                if (cart == null || !cart.CartItems.Any())
+                {
+                    TempData["ErrorMessage"] = "Giỏ hàng của bạn đang trống.";
+                    return RedirectToAction("Cart");
                 }
 
-                // Hiển thị lỗi cho user
-                TempData["ErrorMessage"] = "Please fill in all required fields correctly";
+                var cartItems = selectedIds != null
+                    ? cart.CartItems.Where(ci => selectedIds.Contains(ci.ProductId)).ToList()
+                    : cart.CartItems.ToList();
 
-                // Load lại dữ liệu để hiển thị form
-                model.CartItems = cart.CartItems.Select(ci => new CartItemViewModel
+                itemsToOrder = cartItems.Select(ci => new CartItemViewModel
                 {
                     ProductId = ci.ProductId,
                     ProductName = ci.Product.Name,
                     Price = ci.Product.DiscountPrice ?? ci.Product.Price,
                     Quantity = ci.Quantity
                 }).ToList();
-                model.Subtotal = model.CartItems.Sum(x => x.Price * x.Quantity);
+            }
+
+            if (!itemsToOrder.Any())
+            {
+                TempData["ErrorMessage"] = "Không có sản phẩm nào được chọn.";
+                return RedirectToAction("Cart");
+            }
+
+            // ─── BƯỚC 2: Validate form ────────────────────────────────────────────
+            if (!ModelState.IsValid)
+            {
+                foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                    System.Diagnostics.Debug.WriteLine("ModelState Error: " + error.ErrorMessage);
+
+                TempData["ErrorMessage"] = "Vui lòng điền đầy đủ thông tin.";
+                model.CartItems = itemsToOrder;
+                model.Subtotal = itemsToOrder.Sum(x => x.Price * x.Quantity);
                 model.Total = model.Subtotal + (model.ShippingMethod == "instant" ? 50000 : 1000);
                 model.EstimatedDelivery = DateTime.Now.AddDays(3).ToString("dd/MM/yyyy");
-
                 return View("Checkout", model);
             }
 
-            // Nếu ModelState.IsValid = true, tiếp tục xử lý
-            if (ModelState.IsValid)
+            // ─── BƯỚC 3: Tạo đơn hàng ────────────────────────────────────────────
+            var order = new Order
             {
-                // Tạo đơn hàng (Order)
-                var order = new Order
+                UserId = userId,
+                OrderDate = DateTime.UtcNow,
+                OrderNumber = "ORD-" + DateTime.Now.Ticks.ToString().Substring(10),
+                Status = "Pending",
+                PaymentMethod = model.PaymentMethod,
+                PaymentStatus = "Unpaid",
+                Note = model.OrderNotes,
+                ShippingName = model.DifferentShippingAddress ? model.RecipientFullName : model.FullName,
+                ShippingPhone = model.DifferentShippingAddress ? model.RecipientPhone : model.Phone,
+                ShippingAddress = model.DifferentShippingAddress ? model.ShippingAddress : model.Address,
+                ShippingCity = model.DifferentShippingAddress ? model.ShippingProvince : model.Province,
+                ShippingWard = model.DifferentShippingAddress ? model.ShippingWard : model.Ward,
+                ShippingFee = model.ShippingMethod == "instant" ? 50000 : 1000,
+                TotalAmount = 0
+            };
+
+            _context.Orders.Add(order);
+            _context.SaveChanges();
+
+            // ─── BƯỚC 4: Tạo OrderDetails ─────────────────────────────────────────
+            decimal itemsTotal = 0;
+            foreach (var item in itemsToOrder)
+            {
+                _context.OrderDetails.Add(new OrderDetail
                 {
-                    UserId = userId,
-                    OrderDate = DateTime.UtcNow,
-                    OrderNumber = "ORD-" + DateTime.Now.Ticks.ToString().Substring(10),
-                    Status = "Pending",
-                    PaymentMethod = model.PaymentMethod,
-                    PaymentStatus = "Unpaid",
-                    Note = model.OrderNotes,
-                    ShippingName = model.DifferentShippingAddress ? model.RecipientFullName : model.FullName,
-                    ShippingPhone = model.DifferentShippingAddress ? model.RecipientPhone : model.Phone,
-                    ShippingAddress = model.DifferentShippingAddress ? model.ShippingAddress : model.Address,
-                    ShippingCity = model.DifferentShippingAddress ? model.ShippingProvince : model.Province,
-                    ShippingWard = model.DifferentShippingAddress ? model.ShippingWard : model.Ward,
-                    ShippingFee = model.ShippingMethod == "instant" ? 50000 : 1000,
-                    TotalAmount = 0
-                };
-
-                _context.Orders.Add(order);
-                _context.SaveChanges();
-
-                // Chuyển từ Giỏ sang Chi tiết đơn (OrderDetail)
-                decimal itemsTotal = 0;
-                foreach (var item in cart.CartItems)
-                {
-                    decimal price = item.Product.DiscountPrice ?? item.Product.Price;
-                    var orderDetail = new OrderDetail
-                    {
-                        OrderId = order.Id,
-                        ProductId = item.ProductId,
-                        Quantity = item.Quantity,
-                        Price = price
-                    };
-                    _context.OrderDetails.Add(orderDetail);
-                    itemsTotal += (price * item.Quantity);
-                }
-
-                // Cập nhật tổng tiền & Xóa giỏ hàng
-                order.TotalAmount = itemsTotal + order.ShippingFee;
-                _context.Orders.Update(order);
-                _context.CartItems.RemoveRange(cart.CartItems);
-                _context.SaveChanges();
-
-                if (model.PaymentMethod == "momo")
-                {
-                    return RedirectToAction("CreateMoMoPayment", new { orderId = order.Id });
-                }
-                return RedirectToAction("OrderConfirmation", new { id = order.Id });
+                    OrderId = order.Id,
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity,
+                    Price = item.Price
+                });
+                itemsTotal += item.Price * item.Quantity;
             }
 
-            // Nếu lỗi form -> Load lại dữ liệu checkout
-            model.CartItems = cart.CartItems.Select(ci => new CartItemViewModel
-            {
-                ProductId = ci.ProductId,
-                ProductName = ci.Product.Name,
-                Price = ci.Product.DiscountPrice ?? ci.Product.Price,
-                Quantity = ci.Quantity
-            }).ToList();
-            model.Subtotal = model.CartItems.Sum(x => x.Price * x.Quantity);
-            model.Total = model.Subtotal + (model.ShippingMethod == "instant" ? 50000 : 1000);
+            order.TotalAmount = itemsTotal + order.ShippingFee;
+            _context.Orders.Update(order);
 
-            return View("Checkout", model);
-        }
-
-        [HttpGet]
-        public IActionResult GetCartCount()
-        {
-            try
+            // ─── BƯỚC 5: Xóa khỏi giỏ (chỉ xóa items đã checkout, không xóa cả giỏ) ──
+            if (!isBuyNow)
             {
-                int userId = GetCurrentUserId();
+                var selectedJson = HttpContext.Session.GetString("CheckoutSelectedIds");
+                List<int>? selectedIds = selectedJson != null
+                    ? JsonSerializer.Deserialize<List<int>>(selectedJson)
+                    : null;
+
                 var cart = _context.Carts
                     .Include(c => c.CartItems)
-                    .FirstOrDefault(c => c.UserId == userId);
-
-                int count = cart?.CartItems.Sum(x => x.Quantity) ?? 0;
-                return Json(new { count = count });
-            }
-            catch
-            {
-                return Json(new { count = 0 });
-            }
-        }
-
-        [HttpPost]
-        public IActionResult UpdateShipping(string shippingMethod)
-        {
-            try
-            {
-                int userId = GetCurrentUserId();
-                var cart = _context.Carts
-                    .Include(c => c.CartItems)
-                    .ThenInclude(ci => ci.Product)
                     .FirstOrDefault(c => c.UserId == userId);
 
                 if (cart != null)
                 {
-                    decimal subtotal = cart.CartItems.Sum(x =>
-                        (x.Product.DiscountPrice ?? x.Product.Price) * x.Quantity);
+                    // Xóa đúng những item đã checkout
+                    var itemsToRemove = selectedIds != null
+                        ? cart.CartItems.Where(ci => selectedIds.Contains(ci.ProductId)).ToList()
+                        : cart.CartItems.ToList();
 
-                    decimal shippingFee = shippingMethod == "instant" ? 50000 : 1000;
-                    decimal total = subtotal + shippingFee;
-
-                    // Lưu shipping method vào session
-                    HttpContext.Session.SetString("ShippingMethod", shippingMethod);
-
-                    return Json(new { success = true, total = total, shippingFee = shippingFee });
+                    _context.CartItems.RemoveRange(itemsToRemove);
                 }
+            }
 
-                return Json(new { success = false });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = ex.Message });
-            }
+            // ─── BƯỚC 6: Dọn session ─────────────────────────────────────────────
+            HttpContext.Session.Remove("BuyNowItem");
+            HttpContext.Session.Remove("CheckoutSelectedIds");
+            _context.SaveChanges();
+
+            // ─── BƯỚC 7: Redirect theo phương thức thanh toán ────────────────────
+            if (model.PaymentMethod == "momo")
+                return RedirectToAction("CreateMoMoPayment", new { orderId = order.Id });
+            if (model.PaymentMethod == "paypal")
+                return RedirectToAction("CreatePayPalPayment", new { orderId = order.Id });
+            if (model.PaymentMethod == "vnpay")
+                return RedirectToAction("VnPayCheckout", new { orderId = order.Id, amount = (double)order.TotalAmount });
+
+            return RedirectToAction("OrderConfirmation", new { id = order.Id });
         }
 
         // 7. TRANG CẢM ƠN
@@ -657,6 +782,264 @@ namespace EyelixEyewear_Project.Controllers
             }
 
             return Ok();
+        }
+
+        // ==========================================
+        // PAYPAL BƯỚC 1: TẠO YÊU CẦU THANH TOÁN
+        // ==========================================
+        [HttpGet]
+        public async Task<IActionResult> CreatePayPalPayment(int orderId)
+        {
+            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == orderId);
+            if (order == null) return NotFound();
+
+            var paypalConfig = _configuration.GetSection("PayPal");
+            string clientId = paypalConfig["ClientId"]!;
+            string clientSecret = paypalConfig["ClientSecret"]!;
+            string mode = paypalConfig["Mode"]!;
+            string returnUrl = paypalConfig["ReturnUrl"]!;
+            string cancelUrl = paypalConfig["CancelUrl"]!;
+
+            // Lấy Access Token
+            string baseUrl = mode == "live"
+                ? "https://api-m.paypal.com"
+                : "https://api-m.sandbox.paypal.com";
+
+            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+
+            // Lấy token
+            var tokenRequest = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/v1/oauth2/token");
+            var credentials = Convert.ToBase64String(
+                System.Text.Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}"));
+            tokenRequest.Headers.Add("Authorization", $"Basic {credentials}");
+            tokenRequest.Content = new FormUrlEncodedContent(new[]
+            {
+        new KeyValuePair<string, string>("grant_type", "client_credentials")
+    });
+
+            var tokenResponse = await httpClient.SendAsync(tokenRequest);
+            var tokenString = await tokenResponse.Content.ReadAsStringAsync();
+            var tokenData = System.Text.Json.JsonSerializer
+                .Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(tokenString);
+
+            if (tokenData == null || !tokenData.ContainsKey("access_token"))
+            {
+                TempData["ErrorMessage"] = "Không thể kết nối PayPal. Vui lòng thử lại.";
+                return RedirectToAction("Cart");
+            }
+
+            string accessToken = tokenData["access_token"].GetString()!;
+
+            // Quy đổi VND → USD (1 USD = 25,000 VND)
+            decimal totalUSD = Math.Round(order.TotalAmount / 25000, 2);
+
+            // Tạo order PayPal
+            var orderRequest = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/v2/checkout/orders");
+            orderRequest.Headers.Add("Authorization", $"Bearer {accessToken}");
+            orderRequest.Headers.Add("Prefer", "return=representation");
+
+            var orderBody = new
+            {
+                intent = "CAPTURE",
+                purchase_units = new[]
+                {
+            new
+            {
+                reference_id = order.OrderNumber,
+                description = $"Thanh toan don hang #{order.OrderNumber}",
+                amount = new
+                {
+                    currency_code = "USD",
+                    value = totalUSD.ToString("F2")
+                }
+            }
+        },
+                application_context = new
+                {
+                    return_url = returnUrl,
+                    cancel_url = cancelUrl,
+                    brand_name = "Eyelix Eyewear",
+                    landing_page = "LOGIN",
+                    user_action = "PAY_NOW"
+                }
+            };
+
+            orderRequest.Content = new StringContent(
+                System.Text.Json.JsonSerializer.Serialize(orderBody),
+                System.Text.Encoding.UTF8,
+                "application/json");
+
+            try
+            {
+                var orderResponse = await httpClient.SendAsync(orderRequest);
+                var orderString = await orderResponse.Content.ReadAsStringAsync();
+                var orderData = System.Text.Json.JsonSerializer
+                    .Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(orderString);
+
+                if (orderData != null && orderData.TryGetValue("links", out var links))
+                {
+                    foreach (var link in links.EnumerateArray())
+                    {
+                        if (link.GetProperty("rel").GetString() == "approve")
+                        {
+                            // Lưu orderId vào session để dùng lại ở PayPalReturn
+                            HttpContext.Session.SetInt32("PayPalOrderDbId", orderId);
+                            HttpContext.Session.SetString("PayPalAccessToken", accessToken);
+                            HttpContext.Session.SetString("PayPalBaseUrl", baseUrl);
+
+                            return Redirect(link.GetProperty("href").GetString()!);
+                        }
+                    }
+                }
+
+                TempData["ErrorMessage"] = "Không thể tạo yêu cầu PayPal. Vui lòng thử lại.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["ErrorMessage"] = "Kết nối PayPal timeout. Vui lòng thử lại.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Lỗi: {ex.Message}";
+            }
+
+            return RedirectToAction("Cart");
+        }
+
+        // ==========================================
+        // PAYPAL BƯỚC 2: NHẬN KẾT QUẢ SAU THANH TOÁN
+        // ==========================================
+        [HttpGet]
+        public async Task<IActionResult> PayPalReturn(string token)
+        {
+            var pendingOrderId = HttpContext.Session.GetInt32("PayPalOrderDbId");
+            var accessToken = HttpContext.Session.GetString("PayPalAccessToken");
+            var baseUrl = HttpContext.Session.GetString("PayPalBaseUrl");
+
+            if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(accessToken) || !pendingOrderId.HasValue)
+            {
+                TempData["ErrorMessage"] = "Phiên thanh toán không hợp lệ.";
+                return RedirectToAction("Cart");
+            }
+
+            // Capture payment
+            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+            var captureRequest = new HttpRequestMessage(
+                HttpMethod.Post, $"{baseUrl}/v2/checkout/orders/{token}/capture");
+            captureRequest.Headers.Add("Authorization", $"Bearer {accessToken}");
+            captureRequest.Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
+
+            try
+            {
+                var captureResponse = await httpClient.SendAsync(captureRequest);
+                var captureString = await captureResponse.Content.ReadAsStringAsync();
+                var captureData = System.Text.Json.JsonSerializer
+                    .Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(captureString);
+
+                if (captureData != null &&
+                    captureData.TryGetValue("status", out var status) &&
+                    status.GetString() == "COMPLETED")
+                {
+                    // Cập nhật trạng thái đơn hàng
+                    var order = await _context.Orders.FindAsync(pendingOrderId.Value);
+                    if (order != null)
+                    {
+                        order.PaymentStatus = "Paid";
+                        order.Status = "Processing";
+                        _context.Orders.Update(order);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    // Xóa session tạm
+                    HttpContext.Session.Remove("PayPalOrderDbId");
+                    HttpContext.Session.Remove("PayPalAccessToken");
+                    HttpContext.Session.Remove("PayPalBaseUrl");
+
+                    TempData["SuccessMessage"] = "Thanh toán PayPal thành công!";
+                    return RedirectToAction("OrderConfirmation", new { id = pendingOrderId.Value });
+                }
+
+                TempData["ErrorMessage"] = "Thanh toán PayPal thất bại. Vui lòng thử lại.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Lỗi: {ex.Message}";
+            }
+
+            return RedirectToAction("Cart");
+        }
+
+        // ==========================================
+        // PAYPAL BƯỚC 3: USER HUỶ THANH TOÁN
+        // ==========================================
+        [HttpGet]
+        public IActionResult PayPalCancel()
+        {
+            TempData["ErrorMessage"] = "Bạn đã huỷ thanh toán PayPal.";
+            return RedirectToAction("Cart");
+        }
+
+        // VNPAY
+        [HttpGet]
+        public IActionResult VnPayCheckout(int orderId, double amount)
+        {
+            var model = new VnPaymentRequestModel
+            {
+                OrderId = orderId.ToString(),
+                OrderDescription = "Thanh toan don hang " + orderId,
+                Amount = amount,
+                CreatedDate = DateTime.Now
+            };
+
+            string paymentUrl = _vnPayService.CreatePaymentUrl(model, HttpContext);
+            return Redirect(paymentUrl);
+        }
+
+        [HttpGet]
+        public IActionResult VnPayReturn()
+        {
+            var result = _vnPayService.PaymentExecute(Request.Query);
+
+            // Debug: xem giá trị trả về
+            System.Diagnostics.Debug.WriteLine($"VnPay Success: {result.Success}");
+            System.Diagnostics.Debug.WriteLine($"VnPay OrderId: {result.OrderId}");
+            System.Diagnostics.Debug.WriteLine($"VnPay ResponseCode: {result.VnPayResponseCode}");
+            System.Diagnostics.Debug.WriteLine($"VnPay TransactionId: {result.TransactionId}");
+
+            if (result.Success)
+            {
+                if (int.TryParse(result.OrderId, out int orderId))
+                {
+                    var order = _context.Orders.Find(orderId);
+                    if (order != null)
+                    {
+                        order.PaymentStatus = "Paid";
+                        order.Status = "Processing";
+                        _context.Orders.Update(order);
+                        _context.SaveChanges();
+
+                        TempData["SuccessMessage"] = "Thanh toán VNPay thành công! Mã GD: " + result.TransactionId;
+                        return RedirectToAction("OrderConfirmation", new { id = orderId });
+                    }
+                    else
+                    {
+                        // Không tìm thấy order trong DB
+                        TempData["ErrorMessage"] = $"Không tìm thấy đơn hàng #{orderId} trong hệ thống.";
+                        return RedirectToAction("Cart");
+                    }
+                }
+                else
+                {
+                    // Parse orderId thất bại
+                    TempData["ErrorMessage"] = $"OrderId không hợp lệ: '{result.OrderId}'";
+                    return RedirectToAction("Cart");
+                }
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Thanh toán VNPay thất bại! Mã lỗi: " + result.VnPayResponseCode;
+                return RedirectToAction("Cart");
+            }
         }
     }
 }

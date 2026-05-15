@@ -377,15 +377,28 @@
                                     }
                                 </div>
 
-                                <div class="product-actions">
-                                    <form asp-controller="Order" asp-action="AddToCart" method="post">
+                                    <div class="product-actions">
+
+                                    @* Add to Cart *@
+                                    <button type="button"
+                                            class="btn-add-cart btn-card-action"
+                                            onclick="addToCart(@item.Id, 1)">
+                                        Add to cart
+                                    </button>
+
+                                    @* Buy now *@
+                                    <form asp-controller="Order" asp-action="BuyNow" method="post" style="flex:1;margin:0;">
+                                        @Html.AntiForgeryToken()
                                         <input type="hidden" name="productId" value="@item.Id" />
                                         <input type="hidden" name="quantity" value="1" />
-                                        <button class="btn-add-cart" onclick="addToCartAjax(@item.Id)">
-                                            Add to cart
+                                        <button type="submit" class="btn-buy-now-card btn-card-action">
+                                            BUY NOW
                                         </button>
                                     </form>
+
                                 </div>
+
+
 
                                 <div style="font-size: 12px; color: #687279; margin-top: 0.5rem;">
                                     @(item.Stock > 0 ? $"{item.Stock} in stock" : "Out of stock")
@@ -438,6 +451,54 @@
         </main>
     </div>
 </div>
+
+<style>
+    .product-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        align-items: stretch; /* Ép tất cả phần tử con cao bằng nhau */
+    }
+
+    /* Nhắm vào cả nút Add to Cart và thẻ Form của Buy Now */
+    .product-actions > button.btn-add-cart,
+    .product-actions > form {
+        flex: 1; /* Chia đều không gian 50/50 */
+        margin: 0;
+        display: flex; /* Giúp form ôm trọn nút bên trong */
+    }
+
+    .btn-card-action {
+        width: 100%;
+        height: 100%; /* Ép nút ăn theo chiều cao của form/flex */
+        min-height: 42px; /* Đảm bảo chiều cao tối thiểu */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        white-space: nowrap;
+    }
+
+    /* Add to cart */
+    .btn-add-cart.btn-card-action {
+        background: #1a1a1a;
+        color: #fff;
+    }
+    .btn-add-cart.btn-card-action:hover { background: #f08438; }
+
+    /* Mua ngay */
+    .btn-buy-now-card {
+        background: #1a1a1a;
+        color: #fff;
+    }
+    .btn-buy-now-card:hover { background: #f08438; }
+</style>
+
 
 @section Scripts {
     <script src="~/js/products.js"></script>

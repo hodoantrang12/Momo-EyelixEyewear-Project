@@ -34,14 +34,10 @@
     <!-- Footer -->
     @await Html.PartialAsync("_Footer")
 
-    <!-- Scripts -->
-    <<!-- Scripts -->
-    <!-- jQuery from CDN -->
+    <!-- Scripts (jQuery phải load trước cart.js) -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
             integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
             crossorigin="anonymous"></script>
-
-    <!-- Fallback to local if CDN fails -->
     <script>
         if (typeof jQuery == 'undefined') {
             document.write('<script src="~/lib/jquery/jquery.min.js"><\/script>');
@@ -51,60 +47,49 @@
     <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/main.js" asp-append-version="true"></script>
     <script src="~/js/products.js" asp-append-version="true"></script>
-    <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/cart.js" asp-append-version="true"></script>
     <script src="~/js/search.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 
+    @* ── Hiển thị toast từ TempData (dùng cho Buy Now, các redirect thông thường) ── *@
     @if (TempData["SuccessMessage"] != null)
     {
         <script>
-            document.addEventListener("DOMContentLoaded", function() {
-                Swal.fire({
-                    position: 'top-end',
-                    icon: 'success',
-                    title: '@TempData["SuccessMessage"]',
-                    showConfirmButton: false,
-                    timer: 1500,
-                    toast: true // Kiểu thông báo nhỏ góc màn hình
-                });
+            document.addEventListener("DOMContentLoaded", function () {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'success',
+                        title: '@TempData["SuccessMessage"]',
+                        showConfirmButton: false,
+                        timer: 1500,
+                        toast: true
+                    });
+                }
+                // Cập nhật số giỏ hàng sau khi trang load (TempData nghĩa là vừa có thao tác cart)
+                if (typeof updateHeaderCartCount === 'function') {
+                    updateHeaderCartCount();
+                }
             });
+        </script>
+    }
 
-            function addToCartAjax(productId) {
-                // Gửi request ngầm
-                fetch('/Order/AddToCartAjax', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `productId=${productId}&quantity=1`
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Hiện thông báo đẹp (SweetAlert2)
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Success!',
-                            text: data.message,
-                            showConfirmButton: false,
-                            timer: 1500,
-                            toast: true,
-                            position: 'top-end'
-                        });
-
-                        // (Optional) Nếu bạn có icon giỏ hàng hiển thị số, hãy cập nhật ở đây
-                        // document.getElementById('cart-badge').innerText = data.totalItems;
-                    } else {
-                        Swal.fire('Error', data.message, 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    Swal.fire('Error', 'Có lỗi xảy ra khi kết nối server', 'error');
-                });
-            }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'error',
+                        title: '@TempData["ErrorMessage"]',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        toast: true
+                    });
+                }
+            });
         </script>
     }
 </body>

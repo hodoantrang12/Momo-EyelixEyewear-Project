@@ -43,5 +43,8 @@ namespace EyelixEyewear_Project.Models.ViewModels
         public int EyelixPoints { get; set; }
         public string? EstimatedDelivery { get; set; }
         public bool SubscribeEmail { get; set; }
+
+        public List<int> SelectedProductIds { get; set; } = new List<int>();
+        public bool IsBuyNow { get; set; } = false;
     }
 }

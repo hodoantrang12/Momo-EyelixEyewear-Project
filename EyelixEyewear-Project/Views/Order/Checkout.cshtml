@@ -170,12 +170,8 @@
                         <div class="payment-top">
                             <label>
                                 <input type="radio" name="payment" value="COD" checked>
-                                <span>Cash on Delivery (COD)</span>
+                                    <span>COD (Cash On Delivery)</span>
                             </label>
-                            <span class="payment-icon">💵</span>
-                        </div>
-                        <div class="payment-content">
-                            Thanh toán bằng tiền mặt khi nhận hàng.
                         </div>
                     </div>
 
@@ -189,30 +185,55 @@
                         </div>
                     </div>
 
-                    <div class="payment-option">
-                        <div class="payment-top">
-                            <label>
-                                <input type="radio" name="payment" value="credit">
-                                <span>Credit / Debit Card</span>
-                            </label>
-                            <img src="~/images/logo/credit-card-icon.svg" alt="credit card icon" class="payment-logo">
-                        </div>
-                    </div>
+                            <div class="payment-option">
+                                <div class="payment-top">
+                                    <label>
+                                        <input type="radio" name="payment" value="vnpay">
+                                        <span>VNPay</span>
+                                    </label>
+                                    <img src="~/images/logo/vnpay.png" alt="VNPay" class="payment-logo">
+                                </div>
+                                <div class="payment-content" id="vnpay-note" style="display:none; color:#555; font-size:13px;">
+                                    Bạn sẽ được chuyển sang VNPay để hoàn tất thanh toán.
+                                </div>
+                            </div>
+
+                                <div class="payment-option">
+                                    <div class="payment-top">
+                                        <label>
+                                            <input type="radio" name="payment" value="paypal">
+                                            <span>PayPal</span>
+                                        </label>
+                                        <img src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_100x26.png"
+                                             alt="PayPal" class="payment-logo">
+                                    </div>
+                                    <div class="payment-content" id="paypal-note" style="display:none; color:#555; font-size:13px;">
+                                        Bạn sẽ được chuyển sang PayPal để hoàn tất thanh toán.
+                                    </div>
+                                </div>
                 </div>
 
                 <script>
-                    document.addEventListener("DOMContentLoaded", function() {
-                        // Mặc định set COD
-                        document.querySelector('input[name="PaymentMethod"]').value = "COD";
+                document.addEventListener("DOMContentLoaded", function () {
+                    document.querySelector('input[name="PaymentMethod"]').value = "COD";
 
-                        var radios = document.querySelectorAll('input[name="payment"]');
-                        radios.forEach(radio => {
-                            radio.addEventListener('change', function() {
-                                // Cập nhật giá trị vào hidden field PaymentMethod của ViewModel
-                                document.querySelector('input[name="PaymentMethod"]').value = this.value;
-                            });
+                    var radios = document.querySelectorAll('input[name="payment"]');
+                    radios.forEach(radio => {
+                        radio.addEventListener('change', function () {
+                            document.querySelector('input[name="PaymentMethod"]').value = this.value;
+
+                            // Ẩn tất cả note
+                            var paypalNote = document.getElementById('paypal-note');
+                            var vnpayNote = document.getElementById('vnpay-note');
+                            if (paypalNote) paypalNote.style.display = 'none';
+                            if (vnpayNote) vnpayNote.style.display = 'none';
+
+                            // Hiện note tương ứng
+                            if (this.value === 'paypal' && paypalNote) paypalNote.style.display = 'block';
+                            if (this.value === 'vnpay' && vnpayNote) vnpayNote.style.display = 'block';
                         });
                     });
+                });
                 </script>
 
                 <p class="privacy-policy">
@@ -221,17 +242,6 @@
                 </p>
 
                 <button type="submit" form="checkout-form" class="btn-place-order">Place order</button>
-
-                <script>
-                    document.addEventListener("DOMContentLoaded", function () {
-                        var radios = document.querySelectorAll('input[name="payment"]');
-                        radios.forEach(radio => {
-                            radio.addEventListener('change', function () {
-                                document.querySelector('input[name="PaymentMethod"]').value = this.value;
-                            });
-                        });
-                    });
-                </script>
             </div>
         </aside>
     </div>

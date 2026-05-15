@@ -17,7 +17,7 @@ function addToCart(productId, quantity) {
     }
 
     $.ajax({
-        url: '/Order/AddToCart',
+        url: '/Order/AddToCartAjax',   // ✅ ĐÃ SỬA: dùng action trả JSON thay vì Redirect
         type: 'POST',
         data: { productId: productId, quantity: quantity },
         success: function (response) {
@@ -63,6 +63,11 @@ function addToCart(productId, quantity) {
     });
 }
 
+// Alias để tương thích với code cũ gọi addToCartAjax()
+function addToCartAjax(productId, quantity) {
+    addToCart(productId, quantity);
+}
+
 // ==========================================
 // 2. UPDATE HEADER CART COUNT
 // ==========================================
@@ -89,7 +94,7 @@ function updateHeaderCartCount() {
 // 3. UPDATE QUANTITY
 // ==========================================
 function updateQuantity(productId, newQuantity) {
-    if (newQuantity < 1) return; // Minimum quantity is 1
+    if (newQuantity < 1) return;
 
     $.ajax({
         url: '/Order/UpdateCart',
@@ -119,10 +124,10 @@ function removeFromCart(productId) {
         type: 'POST',
         data: { productId: productId },
         success: function (response) {
-            if (response.success) {
+            if (response.success || response.Success) {
                 window.location.reload();
             } else {
-                alert('Failed to remove item');
+                alert('Failed to remove item: ' + (response.message || response.Message || 'Unknown error'));
             }
         },
         error: function () {
@@ -135,21 +140,14 @@ function removeFromCart(productId) {
 // 5. UPDATE SHIPPING & RECALCULATE TOTAL
 // ==========================================
 function updateShipping(method) {
-    const shippingFee = method === 'instant' ? 50000 : 20000;
-
     $.ajax({
         url: '/Order/UpdateShipping',
         type: 'POST',
         data: { shippingMethod: method },
         success: function (response) {
             if (response.success) {
-                // Update total in cart summary
                 $('#summary-total').text(response.total.toLocaleString('vi-VN') + ' VND');
-
-                // Update total in checkout page if present
                 $('#order-total').text(response.total.toLocaleString('vi-VN') + ' VND');
-
-                // Update VAT info
                 const vatAmount = (response.total * 0.08).toFixed(0);
                 $('.vat-info').text(`(includes ${parseInt(vatAmount).toLocaleString('vi-VN')} VND VAT)`);
             }
@@ -164,24 +162,18 @@ function updateShipping(method) {
 // 6. DOCUMENT READY - EVENT HANDLERS
 // ==========================================
 $(document).ready(function () {
-    console.log('Cart.js loaded and ready'); // Debug log
+    console.log('Cart.js loaded and ready');
 
     // Update cart count on page load
     updateHeaderCartCount();
 
-    // ==========================================
-    // Quantity Controls (- and + buttons)
-    // ==========================================
-    $(document).on('click', '.qty-btn.minus', function (e) {
+    // Quantity Controls
+    /*$(document).off('click', '.qty-btn.minus').on('click', '.qty-btn.minus', function (e) {
         e.preventDefault();
         e.stopPropagation();
-
         const pid = $(this).data('product-id');
         const input = $(`.qty-input[data-product-id="${pid}"]`);
         let qty = parseInt(input.val());
-
-        console.log('Minus button clicked! Product ID:', pid, 'Current quantity:', qty); // Debug
-
         if (qty > 1) {
             updateQuantity(pid, qty - 1);
         } else {
@@ -192,40 +184,26 @@ $(document).ready(function () {
     $(document).on('click', '.qty-btn.plus', function (e) {
         e.preventDefault();
         e.stopPropagation();
-
         const pid = $(this).data('product-id');
         const input = $(`.qty-input[data-product-id="${pid}"]`);
         let qty = parseInt(input.val());
-
-        console.log('Plus button clicked! Product ID:', pid, 'Current quantity:', qty); // Debug
-
         updateQuantity(pid, qty + 1);
-    });
+    });*/
 
-    // ==========================================
-    // Remove Item Button
-    // ==========================================
-    $(document).on('click', '.remove-item', function (e) {
+    // Remove Item
+    /*$(document).off('click', '.remove-item').on('click', '.remove-item', function (e) {
         e.preventDefault();
         e.stopPropagation();
-
         const pid = $(this).data('product-id');
-        console.log('Remove button clicked! Product ID:', pid); // Debug
-
         removeFromCart(pid);
-    });
+    });*/
 
-    // ==========================================
-    // Shipping Method Change
-    // ==========================================
+    // Shipping Method
     $('input[name="shipping"]').change(function () {
-        const method = $(this).val();
-        updateShipping(method);
+        updateShipping($(this).val());
     });
 
-    // ==========================================
     // Checkout Button
-    // ==========================================
     $('#place-order').click(function () {
         $('#checkout-form').submit();
     });
