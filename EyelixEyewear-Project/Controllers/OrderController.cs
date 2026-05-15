@@ -547,12 +547,65 @@ namespace EyelixEyewear_Project.Controllers
             {
                 _context.OrderDetails.Add(new OrderDetail
                 {
+<<<<<<< HEAD
                     OrderId = order.Id,
                     ProductId = item.ProductId,
                     Quantity = item.Quantity,
                     Price = item.Price
                 });
                 itemsTotal += item.Price * item.Quantity;
+=======
+                    UserId = userId,
+                    OrderDate = DateTime.UtcNow,
+                    OrderNumber = "ORD-" + DateTime.Now.Ticks.ToString().Substring(10),
+                    Status = "Pending",
+                    PaymentMethod = model.PaymentMethod,
+                    PaymentStatus = "Unpaid",
+                    Note = model.OrderNotes,
+                    ShippingName = model.DifferentShippingAddress ? model.RecipientFullName : model.FullName,
+                    ShippingPhone = model.DifferentShippingAddress ? model.RecipientPhone : model.Phone,
+                    ShippingAddress = model.DifferentShippingAddress ? model.ShippingAddress : model.Address,
+                    ShippingCity = model.DifferentShippingAddress ? model.ShippingProvince : model.Province,
+                    ShippingWard = model.DifferentShippingAddress ? model.ShippingWard : model.Ward,
+                    ShippingFee = model.ShippingMethod == "instant" ? 50000 : 1000,
+                    TotalAmount = 0
+                };
+
+                _context.Orders.Add(order);
+                _context.SaveChanges();
+
+                // Chuyển từ Giỏ sang Chi tiết đơn (OrderDetail)
+                decimal itemsTotal = 0;
+                foreach (var item in cart.CartItems)
+                {
+                    decimal price = item.Product.DiscountPrice ?? item.Product.Price;
+                    var orderDetail = new OrderDetail
+                    {
+                        OrderId = order.Id,
+                        ProductId = item.ProductId,
+                        Quantity = item.Quantity,
+                        Price = price
+                    };
+                    _context.OrderDetails.Add(orderDetail);
+                    itemsTotal += (price * item.Quantity);
+                }
+
+                // Cập nhật tổng tiền & Xóa giỏ hàng
+                order.TotalAmount = itemsTotal + order.ShippingFee;
+                _context.Orders.Update(order);
+                _context.CartItems.RemoveRange(cart.CartItems);
+                _context.SaveChanges();
+
+                if (model.PaymentMethod == "momo")
+                {
+                    return RedirectToAction("CreateMoMoPayment", new { orderId = order.Id });
+                }
+                if (model.PaymentMethod == "paypal")
+                {
+                    return RedirectToAction("CreatePayPalPayment", new { orderId = order.Id });
+                }
+                return RedirectToAction("OrderConfirmation", new { id = order.Id });
+>>>>>>> c75ffd749b386b323930f2fb4f420f29d5f36725
             }
 
             order.TotalAmount = itemsTotal + order.ShippingFee;
@@ -978,6 +1031,7 @@ namespace EyelixEyewear_Project.Controllers
             TempData["ErrorMessage"] = "Bạn đã huỷ thanh toán PayPal.";
             return RedirectToAction("Cart");
         }
+<<<<<<< HEAD
 
         // VNPAY
         [HttpGet]
@@ -1041,5 +1095,7 @@ namespace EyelixEyewear_Project.Controllers
                 return RedirectToAction("Cart");
             }
         }
+=======
+>>>>>>> c75ffd749b386b323930f2fb4f420f29d5f36725
     }
 }
